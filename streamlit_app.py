@@ -1,15 +1,8 @@
 """
 ShopImpact - Streamlit Version
 A colorful, interactive, and friendly web app to help users become mindful, eco-conscious shoppers.
-"""
+"" 
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, date
-import random
-import json
 
 # Page configuration
 st.set_page_config(

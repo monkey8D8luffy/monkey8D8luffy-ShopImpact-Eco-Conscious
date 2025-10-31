@@ -1,55 +1,23 @@
 """
 ShopImpact - Streamlit Version
 A colorful, interactive, and friendly web app to help users become mindful, eco-conscious shoppers.
-"" 
+"""
 
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+import random
 
-# Page configuration
+# ==================== PAGE CONFIGURATION ====================
 st.set_page_config(
     page_title="ShopImpact 🍃",
     page_icon="🍃",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for styling
-st.markdown("""
-<style>
-    .main {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 50%, #d1fae5 100%);
-    }
-    .stMetric {
-        background-color: white;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .badge {
-        display: inline-block;
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin: 5px;
-        font-weight: bold;
-        border: 2px solid;
-    }
-    .eco-tip {
-        background-color: #dbeafe;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 4px solid #3b82f6;
-        margin: 10px 0;
-    }
-    .success-message {
-        background-color: #d1fae5;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 4px solid #10b981;
-        margin: 10px 0;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Product multipliers for CO2 calculation
+# ==================== CONSTANTS ====================
 PRODUCT_MULTIPLIERS = {
     'Fast Fashion': 2.5,
     'Electronics': 1.8,
@@ -63,7 +31,6 @@ PRODUCT_MULTIPLIERS = {
     'Books (Used)': 0.05,
 }
 
-# Ethical alternatives suggestions
 ETHICAL_ALTERNATIVES = {
     'Fast Fashion': ['Vinted', 'ThredUp', 'Patagonia', 'Shop local', 'Rent the Runway'],
     'Electronics': ['BackMarket (Refurbished)', 'Framework', 'Fairphone', 'Buy used'],
@@ -77,7 +44,6 @@ ETHICAL_ALTERNATIVES = {
     'Books (Used)': ['Perfect! Keep it up! 📚'],
 }
 
-# Popular brands by category
 POPULAR_BRANDS = {
     'Fast Fashion': ['Zara', 'H&M', 'Forever 21', 'Shein', 'Uniqlo', 'Gap', 'Fashion Nova', 'Custom / Other'],
     'Electronics': ['Apple', 'Samsung', 'Dell', 'HP', 'Sony', 'LG', 'Microsoft', 'Google', 'Custom / Other'],
@@ -91,7 +57,6 @@ POPULAR_BRANDS = {
     'Books (Used)': ['ThriftBooks', 'Better World Books', 'Local Used Bookstore', 'Library Sale', 'Custom / Other'],
 }
 
-# Eco tips
 TIPS_LIST = [
     '🌍 Buying second-hand reduces CO₂ by up to 80% compared to new items!',
     '🌱 Local produce has 5x less carbon footprint than imported goods.',
@@ -103,7 +68,6 @@ TIPS_LIST = [
     '📦 Avoid same-day delivery - consolidated shipping is greener!',
 ]
 
-# Motivational quotes
 MOTIVATIONAL_QUOTES = [
     "Every purchase is a vote for the kind of world you want to live in.",
     "Small changes, big impact! 🌍",
@@ -114,14 +78,12 @@ MOTIVATIONAL_QUOTES = [
     "Sustainability is not a trend, it's a responsibility.",
 ]
 
-# Eco-friendly standards (benchmarks)
 ECO_STANDARDS = {
-    'monthlyCO2': 100,  # kg - eco-friendly monthly CO2 limit
-    'monthlyBudget': 15000,  # ₹ - suggested eco-conscious budget
-    'ecoFriendlyPercentage': 30,  # % of purchases should be eco-friendly
+    'monthlyCO2': 100,
+    'monthlyBudget': 15000,
+    'ecoFriendlyPercentage': 30,
 }
 
-# Spending-based badges with limits
 SPENDING_BADGES = [
     {'name': 'Frugal Shopper', 'icon': '💰', 'limit': 5000, 'type': 'spend'},
     {'name': 'Budget Conscious', 'icon': '🎯', 'limit': 10000, 'type': 'spend'},
@@ -130,7 +92,7 @@ SPENDING_BADGES = [
     {'name': 'Eco Warrior', 'icon': '🦸', 'limit': 30, 'type': 'co2'},
 ]
 
-# Initialize session state
+# ==================== SESSION STATE INITIALIZATION ====================
 if 'purchases' not in st.session_state:
     st.session_state.purchases = []
 
@@ -144,13 +106,13 @@ if 'user_profile' not in st.session_state:
         'joinDate': datetime.now().strftime('%Y-%m-%d')
     }
 
-if 'show_alternatives' not in st.session_state:
-    st.session_state.show_alternatives = False
+if 'show_success' not in st.session_state:
+    st.session_state.show_success = False
 
-if 'last_product_type' not in st.session_state:
-    st.session_state.last_product_type = ''
+if 'success_message' not in st.session_state:
+    st.session_state.success_message = ''
 
-# Helper functions
+# ==================== HELPER FUNCTIONS ====================
 def calculate_co2(price, product_type):
     """Calculate CO2 impact based on price and product type"""
     multiplier = PRODUCT_MULTIPLIERS.get(product_type, 1.0)
@@ -195,112 +157,169 @@ def get_earned_badges(stats):
         if badge['type'] == 'co2':
             if stats['totalCO2'] <= badge['limit'] and stats['totalCO2'] > 0:
                 earned.append(badge)
-        else:  # spend
+        else:
             if stats['totalSpend'] <= badge['limit'] and stats['totalSpend'] > 0:
                 earned.append(badge)
     return earned
 
-def get_progress_color(progress):
-    """Get color based on progress percentage"""
-    if progress <= 50:
-        return '#10b981'  # green
-    elif progress <= 80:
-        return '#eab308'  # yellow
+def add_purchase(product_type, brand, price):
+    """Add a new purchase to the session state"""
+    co2_impact = calculate_co2(price, product_type)
+    purchase = {
+        'date': datetime.now().strftime('%Y-%m-%d'),
+        'type': product_type,
+        'brand': brand,
+        'price': float(price),
+        'co2_impact': float(co2_impact)
+    }
+    st.session_state.purchases.append(purchase)
+    
+    # Set success message
+    if product_type in ['Second-Hand Item', 'Local Groceries', 'Books (Used)']:
+        st.session_state.success_message = f"🌟 Eco-friendly choice! You're making a difference!"
+        st.balloons()
     else:
-        return '#ef4444'  # red
+        st.session_state.success_message = f"✅ Logged! Your {product_type} added {co2_impact:.1f} kg of CO₂."
+    st.session_state.show_success = True
 
-# Main App Header
+# ==================== CUSTOM CSS ====================
+st.markdown("""
+<style>
+    .main {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 50%, #d1fae5 100%);
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: white;
+        border-radius: 10px;
+        padding: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+    .eco-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 2px solid #10b981;
+        margin: 10px 0;
+    }
+    .badge-card {
+        background-color: #d1fae5;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #10b981;
+        margin: 10px 0;
+        text-align: center;
+    }
+    .tip-card {
+        background-color: #dbeafe;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #3b82f6;
+        margin: 10px 0;
+    }
+    .quote-card {
+        background-color: #e9d5ff;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #a855f7;
+        margin: 10px 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==================== HEADER ====================
 st.markdown("<h1 style='text-align: center; color: #16a34a;'>🍃 ShopImpact 🍃</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #6b7280; font-size: 18px;'>Your friendly guide to conscious shopping.</p>", unsafe_allow_html=True)
 
-# Welcome message
 if st.session_state.user_profile['name']:
     st.markdown(f"<p style='text-align: center; color: #16a34a; font-size: 16px;'>Welcome back, {st.session_state.user_profile['name']}! 🌟</p>", unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Navigation tabs
+# ==================== NAVIGATION TABS ====================
 tab1, tab2 = st.tabs(["📊 Dashboard", "👤 Profile"])
 
-# ========== DASHBOARD TAB ==========
+# ==================== DASHBOARD TAB ====================
 with tab1:
-    col_main, col_sidebar = st.columns([2, 1])
+    col_main, col_sidebar = st.columns([2.5, 1])
     
-    # Main Content Column
     with col_main:
         # Purchase Form
-        st.header("🛍️ Log a Purchase")
+        st.markdown("### 🛍️ Log a Purchase")
         
-        with st.form("purchase_form"):
-            product_type = st.selectbox(
-                "Product Type",
-                options=list(PRODUCT_MULTIPLIERS.keys())
-            )
+        with st.form("purchase_form", clear_on_submit=True):
+            col1, col2 = st.columns(2)
             
-            # Brand selection with popular brands
-            brands_list = POPULAR_BRANDS.get(product_type, ['Custom / Other'])
-            selected_brand = st.selectbox("Brand", options=brands_list)
+            with col1:
+                product_type = st.selectbox(
+                    "Product Type",
+                    options=list(PRODUCT_MULTIPLIERS.keys()),
+                    key="product_type"
+                )
             
-            # Custom brand input if "Custom / Other" is selected
+            with col2:
+                brands_list = POPULAR_BRANDS.get(product_type, ['Custom / Other'])
+                selected_brand = st.selectbox("Brand", options=brands_list, key="brand")
+            
             if selected_brand == 'Custom / Other':
                 custom_brand = st.text_input("Enter Custom Brand Name", placeholder="e.g., Nike, Apple, Local Farm...")
-                final_brand = custom_brand
+                final_brand = custom_brand if custom_brand else "Custom"
             else:
                 final_brand = selected_brand
             
-            price = st.number_input("Price (₹)", min_value=0, step=1, value=0)
+            price = st.number_input("Price (₹)", min_value=0, step=1, value=0, key="price")
             
             # Show estimated CO2
-            estimated_co2 = calculate_co2(price, product_type)
-            st.info(f"**Estimated CO₂ Impact:** {estimated_co2:.1f} kg")
+            if price > 0:
+                estimated_co2 = calculate_co2(price, product_type)
+                st.info(f"**Estimated CO₂ Impact:** {estimated_co2:.1f} kg")
             
-            submit_button = st.form_submit_button("Log Purchase", type="primary")
+            submit_col1, submit_col2 = st.columns([3, 1])
+            with submit_col2:
+                submit_button = st.form_submit_button("✅ Log Purchase", type="primary", use_container_width=True)
             
             if submit_button:
-                if not final_brand or price <= 0:
-                    st.error("Please fill in all fields with valid values.")
+                if price <= 0:
+                    st.error("⚠️ Please enter a valid price greater than 0.")
+                elif not final_brand or final_brand == "Custom":
+                    st.error("⚠️ Please enter a brand name.")
                 else:
-                    # Add purchase
-                    purchase = {
-                        'date': datetime.now().strftime('%Y-%m-%d'),
-                        'type': product_type,
-                        'brand': final_brand,
-                        'price': price,
-                        'co2_impact': estimated_co2
-                    }
-                    st.session_state.purchases.append(purchase)
-                    st.session_state.show_alternatives = True
-                    st.session_state.last_product_type = product_type
-                    
-                    # Show success message
-                    if product_type in ['Second-Hand Item', 'Local Groceries', 'Books (Used)']:
-                        st.success(f"🌟 Eco-friendly choice! You're making a difference!")
-                        st.balloons()
-                    else:
-                        st.success(f"Logged! Your {product_type} added {estimated_co2:.1f} kg of CO₂.")
-                    
+                    add_purchase(product_type, final_brand, price)
                     st.rerun()
         
-        # Show greener alternatives
-        if st.session_state.show_alternatives and st.session_state.last_product_type:
-            alternatives = ETHICAL_ALTERNATIVES.get(st.session_state.last_product_type, [])
+        # Show success message
+        if st.session_state.show_success:
+            st.success(st.session_state.success_message)
+            st.session_state.show_success = False
+        
+        # Show alternatives for last purchase
+        if st.session_state.purchases:
+            last_purchase = st.session_state.purchases[-1]
+            alternatives = ETHICAL_ALTERNATIVES.get(last_purchase['type'], [])
             if alternatives:
-                is_eco_friendly = st.session_state.last_product_type in ['Second-Hand Item', 'Local Groceries', 'Books (Used)']
+                is_eco = last_purchase['type'] in ['Second-Hand Item', 'Local Groceries', 'Books (Used)']
                 
-                if is_eco_friendly:
+                if is_eco:
                     st.markdown(f"""
-                    <div class="success-message">
-                        <h4>🎉 Amazing Choice!</h4>
-                        <ul>
+                    <div style="background-color: #d1fae5; padding: 15px; border-radius: 10px; 
+                                border-left: 4px solid #10b981; margin: 10px 0;">
+                        <h4 style="color: #16a34a; margin-top: 0;">🎉 Amazing Choice!</h4>
+                        <ul style="margin-bottom: 0;">
                             {''.join([f'<li>{alt}</li>' for alt in alternatives])}
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
-                    <div class="eco-tip">
-                        <h4>✨ Greener choices for {st.session_state.last_product_type}:</h4>
-                        <ul>
+                    <div class="tip-card">
+                        <h4 style="color: #2563eb; margin-top: 0;">✨ Greener choices for {last_purchase['type']}:</h4>
+                        <ul style="margin-bottom: 0;">
                             {''.join([f'<li>{alt}</li>' for alt in alternatives])}
                         </ul>
                     </div>
@@ -309,18 +328,15 @@ with tab1:
         st.markdown("---")
         
         # Dashboard
-        st.header("📈 Your Monthly Dashboard")
+        st.markdown("### 📈 Your Shopping Dashboard")
         
-        # Date filter
-        col_filter1, col_filter2, col_filter3 = st.columns([2, 2, 1])
-        with col_filter1:
-            start_date = st.date_input("Start Date", value=None)
-        with col_filter2:
-            end_date = st.date_input("End Date", value=None)
-        with col_filter3:
-            if st.button("Clear Filters"):
-                start_date = None
-                end_date = None
+        # Filter controls in expander
+        with st.expander("🔍 Filter by Date Range"):
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                start_date = st.date_input("Start Date", value=None, key="start_date")
+            with col_f2:
+                end_date = st.date_input("End Date", value=None, key="end_date")
         
         # Filter purchases
         filtered_purchases = st.session_state.purchases.copy()
@@ -331,25 +347,26 @@ with tab1:
                 and (not end_date or datetime.strptime(p['date'], '%Y-%m-%d').date() <= end_date)
             ]
         
-        # Calculate metrics
         if filtered_purchases:
             total_co2 = sum(p['co2_impact'] for p in filtered_purchases)
             total_spend = sum(p['price'] for p in filtered_purchases)
             
             # Metrics
-            metric_col1, metric_col2 = st.columns(2)
+            metric_col1, metric_col2, metric_col3 = st.columns(3)
             with metric_col1:
-                st.metric("Total CO₂ Impact", f"{total_co2:.1f} kg", delta=None)
+                st.metric("Total Spend", f"₹{total_spend:,.0f}")
             with metric_col2:
-                st.metric("Total Spend", f"₹{total_spend:.0f}", delta=None)
+                st.metric("Total CO₂ Impact", f"{total_co2:.1f} kg")
+            with metric_col3:
+                st.metric("Purchases", len(filtered_purchases))
             
             st.markdown("---")
             
             # Charts
-            st.subheader("CO₂ Impact by Product Category")
-            
-            # Prepare data for bar chart
             df_purchases = pd.DataFrame(filtered_purchases)
+            
+            # Bar chart
+            st.markdown("#### CO₂ Impact by Category")
             category_data = df_purchases.groupby('type')['co2_impact'].sum().reset_index()
             category_data.columns = ['Category', 'CO2 (kg)']
             
@@ -360,14 +377,16 @@ with tab1:
                 color='CO2 (kg)',
                 color_continuous_scale='Greens'
             )
-            fig_bar.update_layout(showlegend=False, xaxis_tickangle=-45)
+            fig_bar.update_layout(
+                showlegend=False,
+                xaxis_tickangle=-45,
+                height=400,
+                margin=dict(l=20, r=20, t=30, b=100)
+            )
             st.plotly_chart(fig_bar, use_container_width=True)
             
-            st.markdown("---")
-            
-            # Cumulative CO2 over time
-            st.subheader("Cumulative CO₂ Over Time")
-            
+            # Line chart
+            st.markdown("#### Cumulative CO₂ Over Time")
             df_sorted = df_purchases.sort_values('date')
             df_sorted['cumulative_co2'] = df_sorted['co2_impact'].cumsum()
             
@@ -379,125 +398,120 @@ with tab1:
                 labels={'cumulative_co2': 'Cumulative CO₂ (kg)', 'date': 'Date'}
             )
             fig_line.update_traces(line_color='#16a34a', line_width=3)
+            fig_line.update_layout(height=400, margin=dict(l=20, r=20, t=30, b=40))
             st.plotly_chart(fig_line, use_container_width=True)
             
             st.markdown("---")
             
             # Purchase Log
-            st.subheader("📋 Your Purchase Log")
+            st.markdown("#### 📋 Purchase History")
             
-            col_log1, col_log2 = st.columns([3, 1])
-            with col_log2:
-                if st.button("📥 Export CSV"):
-                    csv = df_purchases.to_csv(index=False)
-                    st.download_button(
-                        label="Download CSV",
-                        data=csv,
-                        file_name="shopimpact_data.csv",
-                        mime="text/csv"
-                    )
+            export_col1, export_col2 = st.columns([3, 1])
+            with export_col2:
+                csv = df_purchases.to_csv(index=False)
+                st.download_button(
+                    label="📥 Export CSV",
+                    data=csv,
+                    file_name=f"shopimpact_{datetime.now().strftime('%Y%m%d')}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
             
             # Display table
             display_df = df_purchases[['date', 'type', 'brand', 'price', 'co2_impact']].copy()
             display_df.columns = ['Date', 'Product Type', 'Brand', 'Price (₹)', 'CO₂ (kg)']
-            display_df['Price (₹)'] = display_df['Price (₹)'].apply(lambda x: f"₹{x:.0f}")
-            display_df['CO₂ (kg)'] = display_df['CO₂ (kg)'].apply(lambda x: f"{x:.1f}")
-            
+            display_df = display_df.sort_values('Date', ascending=False)
             st.dataframe(display_df, use_container_width=True, hide_index=True)
         else:
-            st.info("No purchases logged yet. Start tracking your impact!")
+            st.info("📝 No purchases logged yet. Start tracking your impact by logging your first purchase above!")
     
     # Sidebar Column
     with col_sidebar:
-        st.header("🏆 Rewards & Tips")
+        st.markdown("### 🏆 Rewards & Tips")
         
-        # Calculate monthly stats for badges
+        # Calculate monthly stats
         monthly_stats = get_monthly_stats(st.session_state.purchases)
         earned_badges = get_earned_badges(monthly_stats)
         
         # Show badges
-        st.subheader("Your Badges")
+        st.markdown("#### Your Badges")
         if earned_badges:
             for badge in earned_badges:
                 st.markdown(f"""
-                <div style="background-color: #d1fae5; padding: 10px; border-radius: 8px; 
-                            border: 2px solid #10b981; margin: 5px 0; text-align: center;">
-                    <span style="font-size: 24px;">{badge['icon']}</span>
+                <div class="badge-card">
+                    <span style="font-size: 32px;">{badge['icon']}</span>
                     <p style="margin: 5px 0; font-weight: bold;">{badge['name']}</p>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("Start logging purchases to earn badges! 🏅")
+            st.info("🏅 Earn badges by staying under spending and CO₂ limits!")
         
         st.markdown("---")
         
         # Eco Tip
         st.markdown(f"""
-        <div class="eco-tip">
-            <h4>💡 Eco Tip of the Day</h4>
-            <p>{random.choice(TIPS_LIST)}</p>
+        <div class="tip-card">
+            <h4 style="color: #2563eb; margin-top: 0;">💡 Eco Tip</h4>
+            <p style="margin-bottom: 0;">{random.choice(TIPS_LIST)}</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Motivational Quote
         st.markdown(f"""
-        <div style="background-color: #e9d5ff; padding: 15px; border-radius: 10px; 
-                    border-left: 4px solid #a855f7; margin: 15px 0;">
+        <div class="quote-card">
             <p style="font-style: italic; margin: 0;">"{random.choice(MOTIVATIONAL_QUOTES)}"</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # High contrast mode toggle
         st.markdown("---")
-        high_contrast = st.checkbox("High Contrast Mode")
         
         # Reset button
-        if st.button("🔄 Start a New Month", type="secondary"):
+        if st.button("🔄 Start New Month", type="secondary", use_container_width=True):
             if st.session_state.purchases:
                 st.session_state.purchases = []
-                st.success("Fresh start! Ready for a new month of conscious shopping.")
+                st.success("✨ Fresh start! Ready for conscious shopping.")
                 st.rerun()
         
         # Fun Stats
         if st.session_state.purchases:
             st.markdown("---")
-            st.subheader("📈 Fun Stats")
+            st.markdown("#### 📈 Quick Stats")
             
             total_items = len(st.session_state.purchases)
             eco_items = sum(1 for p in st.session_state.purchases 
                           if p['type'] in ['Second-Hand Item', 'Local Groceries', 'Books (Used)'])
             
-            # Most purchased category
-            df_all = pd.DataFrame(st.session_state.purchases)
-            most_purchased = df_all['type'].value_counts().index[0] if not df_all.empty else 'N/A'
-            
-            st.write(f"**Total items tracked:** {total_items}")
-            st.write(f"**Eco-friendly purchases:** {eco_items}")
-            st.write(f"**Most purchased:** {most_purchased}")
+            st.write(f"**Total tracked:** {total_items}")
+            st.write(f"**Eco purchases:** {eco_items}")
+            if total_items > 0:
+                eco_percent = (eco_items / total_items) * 100
+                st.write(f"**Eco rate:** {eco_percent:.0f}%")
 
-# ========== PROFILE TAB ==========
+# ==================== PROFILE TAB ====================
 with tab2:
-    st.header("👤 Your Profile")
+    st.markdown("### 👤 Your Profile")
     
     profile = st.session_state.user_profile
     
     # Profile display
-    col_avatar, col_info = st.columns([1, 3])
+    col_avatar, col_info = st.columns([1, 4])
     with col_avatar:
         avatar_letter = profile['name'][0].upper() if profile['name'] else '?'
         st.markdown(f"""
-        <div style="width: 100px; height: 100px; border-radius: 50%; 
+        <div style="width: 80px; height: 80px; border-radius: 50%; 
                     background-color: #16a34a; color: white; 
                     display: flex; align-items: center; justify-content: center;
-                    font-size: 48px; font-weight: bold;">
+                    font-size: 36px; font-weight: bold; margin: 10px auto;">
             {avatar_letter}
         </div>
         """, unsafe_allow_html=True)
     
     with col_info:
-        st.markdown(f"### {profile['name'] if profile['name'] else 'Eco Hero'}")
+        st.markdown(f"## {profile['name'] if profile['name'] else 'Eco Hero'}")
         if profile['location']:
             st.write(f"📍 {profile['location']}")
+        if profile['age']:
+            st.write(f"🎂 Age: {profile['age']}")
         
         days_since = (datetime.now() - datetime.strptime(profile['joinDate'], '%Y-%m-%d')).days
         st.write(f"📅 Member for {days_since} days")
@@ -505,15 +519,22 @@ with tab2:
     st.markdown("---")
     
     # Edit Profile
-    with st.expander("✏️ Edit Profile", expanded=False):
+    with st.expander("✏️ Edit Profile"):
         with st.form("profile_form"):
             name = st.text_input("Name", value=profile['name'])
-            age = st.text_input("Age", value=profile['age'])
-            location = st.text_input("Location", value=profile['location'])
-            monthly_budget = st.number_input("Monthly Budget (₹)", value=profile['monthlyBudget'], min_value=0, step=1000)
-            co2_goal = st.number_input("Monthly CO₂ Goal (kg)", value=profile['co2Goal'], min_value=0, step=10)
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                age = st.text_input("Age", value=profile['age'])
+            with col_p2:
+                location = st.text_input("Location", value=profile['location'])
             
-            if st.form_submit_button("Save Changes", type="primary"):
+            col_p3, col_p4 = st.columns(2)
+            with col_p3:
+                monthly_budget = st.number_input("Monthly Budget (₹)", value=profile['monthlyBudget'], min_value=0, step=1000)
+            with col_p4:
+                co2_goal = st.number_input("Monthly CO₂ Goal (kg)", value=profile['co2Goal'], min_value=0, step=10)
+            
+            if st.form_submit_button("💾 Save Changes", type="primary", use_container_width=True):
                 st.session_state.user_profile = {
                     'name': name,
                     'age': age,
@@ -522,89 +543,89 @@ with tab2:
                     'co2Goal': co2_goal,
                     'joinDate': profile['joinDate']
                 }
-                st.success("Profile updated successfully! 🎉")
+                st.success("✅ Profile updated successfully! 🎉")
                 st.rerun()
     
     # Monthly Stats
-    st.subheader("📊 This Month's Stats")
+    st.markdown("### 📊 This Month's Stats")
     
     monthly_stats = get_monthly_stats(st.session_state.purchases)
     
     stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
     with stat_col1:
-        st.metric("Total Spend", f"₹{monthly_stats['totalSpend']:.0f}")
+        st.metric("Spend", f"₹{monthly_stats['totalSpend']:,.0f}")
     with stat_col2:
-        st.metric("CO₂ Impact", f"{monthly_stats['totalCO2']:.1f} kg")
+        st.metric("CO₂", f"{monthly_stats['totalCO2']:.1f} kg")
     with stat_col3:
         st.metric("Purchases", monthly_stats['totalPurchases'])
     with stat_col4:
-        st.metric("Eco-Friendly", f"{monthly_stats['ecoFriendlyPercent']:.0f}%")
+        st.metric("Eco %", f"{monthly_stats['ecoFriendlyPercent']:.0f}%")
     
     st.markdown("---")
     
     # Goals vs Eco Standards
-    st.subheader("🎯 Your Goals vs Eco Standards")
+    st.markdown("### 🎯 Your Goals vs Eco Standards")
     
     # Personal Budget Goal
     if profile['monthlyBudget'] > 0:
         budget_progress = min((monthly_stats['totalSpend'] / profile['monthlyBudget']) * 100, 100)
         st.write("**💰 Your Budget Goal**")
-        st.write(f"₹{monthly_stats['totalSpend']:.0f} / ₹{profile['monthlyBudget']}")
+        st.caption(f"₹{monthly_stats['totalSpend']:,.0f} / ₹{profile['monthlyBudget']:,}")
         st.progress(budget_progress / 100)
         if budget_progress < 100:
             st.caption(f"✅ {100 - budget_progress:.0f}% remaining")
         else:
-            st.caption("⚠️ Budget exceeded! Consider eco-friendly alternatives.")
-        st.markdown("---")
+            st.caption("⚠️ Budget exceeded!")
+        st.markdown("")
     
     # Personal CO2 Goal
     if profile['co2Goal'] > 0:
         co2_progress = min((monthly_stats['totalCO2'] / profile['co2Goal']) * 100, 100)
         st.write("**📉 Your CO₂ Goal**")
-        st.write(f"{monthly_stats['totalCO2']:.1f} / {profile['co2Goal']} kg")
+        st.caption(f"{monthly_stats['totalCO2']:.1f} / {profile['co2Goal']} kg")
         st.progress(co2_progress / 100)
         if co2_progress < 100:
             st.caption(f"✅ {100 - co2_progress:.0f}% remaining")
         else:
-            st.caption("⚠️ CO₂ goal exceeded! Try second-hand or local options.")
-        st.markdown("---")
+            st.caption("⚠️ CO₂ goal exceeded!")
+        st.markdown("")
     
     # Eco Standard - CO2
     eco_co2_progress = min((monthly_stats['totalCO2'] / ECO_STANDARDS['monthlyCO2']) * 100, 100)
-    st.write("**🌍 Eco-Friendly CO₂ Standard**")
-    st.write(f"{monthly_stats['totalCO2']:.1f} / {ECO_STANDARDS['monthlyCO2']} kg")
+    st.write("**🌍 Eco CO₂ Standard**")
+    st.caption(f"{monthly_stats['totalCO2']:.1f} / {ECO_STANDARDS['monthlyCO2']} kg")
     st.progress(eco_co2_progress / 100)
     if eco_co2_progress < 100:
-        st.caption(f"🎉 Great! You're {100 - eco_co2_progress:.0f}% below eco standards!")
+        st.caption(f"🎉 {100 - eco_co2_progress:.0f}% below eco standard!")
     else:
-        st.caption(f"⚠️ {eco_co2_progress - 100:.0f}% above eco-friendly limit.")
-    st.markdown("---")
+        st.caption(f"⚠️ {eco_co2_progress - 100:.0f}% above eco limit")
+    st.markdown("")
     
     # Eco Standard - Budget
     eco_budget_progress = min((monthly_stats['totalSpend'] / ECO_STANDARDS['monthlyBudget']) * 100, 100)
-    st.write("**💚 Eco-Conscious Budget Standard**")
-    st.write(f"₹{monthly_stats['totalSpend']:.0f} / ₹{ECO_STANDARDS['monthlyBudget']}")
+    st.write("**💚 Eco Budget Standard**")
+    st.caption(f"₹{monthly_stats['totalSpend']:,.0f} / ₹{ECO_STANDARDS['monthlyBudget']:,}")
     st.progress(eco_budget_progress / 100)
     if eco_budget_progress < 100:
-        st.caption(f"✅ Excellent! {100 - eco_budget_progress:.0f}% under eco budget.")
+        st.caption(f"✅ {100 - eco_budget_progress:.0f}% under eco budget")
     else:
-        st.caption("⚠️ Consider reducing consumption this month.")
-    st.markdown("---")
+        st.caption("⚠️ Consider reducing consumption")
+    st.markdown("")
     
     # Eco-Friendly Percentage
     eco_percent_progress = min((monthly_stats['ecoFriendlyPercent'] / ECO_STANDARDS['ecoFriendlyPercentage']) * 100, 100)
     st.write("**♻️ Eco-Friendly Purchases**")
-    st.write(f"{monthly_stats['ecoFriendlyPercent']:.0f}% / {ECO_STANDARDS['ecoFriendlyPercentage']}%")
+    st.caption(f"{monthly_stats['ecoFriendlyPercent']:.0f}% / {ECO_STANDARDS['ecoFriendlyPercentage']}%")
     st.progress(eco_percent_progress / 100)
     if monthly_stats['ecoFriendlyPercent'] >= ECO_STANDARDS['ecoFriendlyPercentage']:
-        st.caption("🎉 Amazing! You're shopping sustainably!")
+        st.caption("🎉 Shopping sustainably!")
     else:
-        st.caption("💡 Try adding more second-hand or local items.")
+        st.caption("💡 Try more second-hand/local items")
     
     st.markdown("---")
     
-    # Spending-Based Badges
-    st.subheader("🏆 Your Badges")
+    # Badges Section
+    st.markdown("### 🏆 Your Badges")
     
     earned_badges = get_earned_badges(monthly_stats)
     
@@ -612,47 +633,39 @@ with tab2:
         badge_cols = st.columns(2)
         for idx, badge in enumerate(earned_badges):
             with badge_cols[idx % 2]:
-                limit_text = f"CO₂ under {badge['limit']} kg" if badge['type'] == 'co2' else f"Spending under ₹{badge['limit']}"
+                limit_text = f"CO₂ < {badge['limit']} kg" if badge['type'] == 'co2' else f"< ₹{badge['limit']:,}"
                 st.markdown(f"""
-                <div style="background-color: #d1fae5; padding: 15px; border-radius: 10px; 
-                            border: 2px solid #10b981; margin: 10px 0;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 32px;">{badge['icon']}</span>
-                        <div>
-                            <p style="margin: 0; font-weight: bold; font-size: 16px;">{badge['name']}</p>
-                            <p style="margin: 0; font-size: 12px; color: #666;">{limit_text}</p>
-                        </div>
-                    </div>
+                <div class="badge-card">
+                    <span style="font-size: 40px;">{badge['icon']}</span>
+                    <p style="margin: 8px 0; font-weight: bold; font-size: 16px;">{badge['name']}</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">{limit_text}</p>
                 </div>
                 """, unsafe_allow_html=True)
     else:
-        st.info("No badges earned this month yet! Keep your spending and CO₂ under limits to earn badges.")
+        st.info("🏅 No badges this month. Stay under limits to earn badges!")
     
     # Available badges
-    st.write("**Available Badges:**")
-    badge_grid_cols = st.columns(3)
+    st.markdown("#### Available Badges")
+    badge_grid_cols = st.columns(5)
     for idx, badge in enumerate(SPENDING_BADGES):
         is_earned = any(b['name'] == badge['name'] for b in earned_badges)
-        with badge_grid_cols[idx % 3]:
-            opacity = "1.0" if is_earned else "0.5"
-            bg_color = "#d1fae5" if is_earned else "#f3f4f6"
-            border_color = "#10b981" if is_earned else "#d1d5db"
-            limit_text = f"<{badge['limit']}kg" if badge['type'] == 'co2' else f"<₹{badge['limit']}"
+        with badge_grid_cols[idx % 5]:
+            opacity = "1.0" if is_earned else "0.4"
+            limit_text = f"<{badge['limit']}kg" if badge['type'] == 'co2' else f"<₹{badge['limit']/1000:.0f}k"
             
             st.markdown(f"""
-            <div style="background-color: {bg_color}; padding: 10px; border-radius: 8px; 
-                        border: 1px solid {border_color}; margin: 5px 0; text-align: center;
-                        opacity: {opacity};">
+            <div style="background-color: {'#d1fae5' if is_earned else '#f3f4f6'}; 
+                        padding: 10px; border-radius: 8px; text-align: center;
+                        opacity: {opacity}; border: 1px solid {'#10b981' if is_earned else '#d1d5db'};">
                 <span style="font-size: 24px;">{badge['icon']}</span>
-                <p style="margin: 5px 0; font-size: 12px; font-weight: bold;">{badge['name']}</p>
-                <p style="margin: 0; font-size: 10px; color: #666;">{limit_text}</p>
+                <p style="margin: 5px 0; font-size: 10px;">{limit_text}</p>
             </div>
             """, unsafe_allow_html=True)
     
     st.markdown("---")
     
     # Lifetime Achievements
-    st.subheader("🌟 Lifetime Achievements")
+    st.markdown("### 🌟 Lifetime Achievements")
     
     total_purchases = len(st.session_state.purchases)
     total_spent = sum(p['price'] for p in st.session_state.purchases)
@@ -662,42 +675,46 @@ with tab2:
     achieve_col1, achieve_col2, achieve_col3, achieve_col4 = st.columns(4)
     
     with achieve_col1:
-        st.markdown(f"""
-        <div style="text-align: center; padding: 10px;">
-            <p style="font-size: 36px; margin: 0;">🛍️</p>
-            <p style="font-size: 20px; margin: 5px 0; font-weight: bold;">{total_purchases}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Total Purchases</p>
+        st.markdown("""
+        <div style="text-align: center; padding: 10px; background-color: white; 
+                    border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <p style="font-size: 32px; margin: 0;">🛍️</p>
+            <p style="font-size: 20px; margin: 5px 0; font-weight: bold;">""" + str(total_purchases) + """</p>
+            <p style="font-size: 11px; margin: 0; color: #666;">Purchases</p>
         </div>
         """, unsafe_allow_html=True)
     
     with achieve_col2:
         st.markdown(f"""
-        <div style="text-align: center; padding: 10px;">
-            <p style="font-size: 36px; margin: 0;">💰</p>
-            <p style="font-size: 20px; margin: 5px 0; font-weight: bold;">₹{total_spent:.0f}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Total Spent</p>
+        <div style="text-align: center; padding: 10px; background-color: white; 
+                    border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <p style="font-size: 32px; margin: 0;">💰</p>
+            <p style="font-size: 20px; margin: 5px 0; font-weight: bold;">₹{total_spent:,.0f}</p>
+            <p style="font-size: 11px; margin: 0; color: #666;">Total Spent</p>
         </div>
         """, unsafe_allow_html=True)
     
     with achieve_col3:
         st.markdown(f"""
-        <div style="text-align: center; padding: 10px;">
-            <p style="font-size: 36px; margin: 0;">🌱</p>
+        <div style="text-align: center; padding: 10px; background-color: white; 
+                    border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <p style="font-size: 32px; margin: 0;">🌱</p>
             <p style="font-size: 20px; margin: 5px 0; font-weight: bold;">{total_eco}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Eco Purchases</p>
+            <p style="font-size: 11px; margin: 0; color: #666;">Eco Items</p>
         </div>
         """, unsafe_allow_html=True)
     
     with achieve_col4:
         st.markdown(f"""
-        <div style="text-align: center; padding: 10px;">
-            <p style="font-size: 36px; margin: 0;">🏆</p>
+        <div style="text-align: center; padding: 10px; background-color: white; 
+                    border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <p style="font-size: 32px; margin: 0;">🏆</p>
             <p style="font-size: 20px; margin: 5px 0; font-weight: bold;">{len(earned_badges)}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Badges Earned</p>
+            <p style="font-size: 11px; margin: 0; color: #666;">Badges</p>
         </div>
         """, unsafe_allow_html=True)
 
-# Footer
+# ==================== FOOTER ====================
 st.markdown("---")
 st.markdown(
     "<p style='text-align: center; color: #9ca3af; font-size: 14px;'>ShopImpact 🍃 | Making conscious shopping easy and fun!</p>",

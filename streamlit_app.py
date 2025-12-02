@@ -112,49 +112,53 @@ DATA_FILE = Path("shopimpact_data.json")
 def get_eco_graphic_svg(animate: bool = False) -> str:
     """Generate SVG eco graphic (leaf with sparkles)"""
     animation_class = 'eco-graphic-animate' if animate else ''
-    sparkles = """
-        <circle cx="60" cy="50" r="3" fill="#fbbf24" class="sparkle sparkle-1" />
-        <circle cx="140" cy="70" r="2" fill="#fbbf24" class="sparkle sparkle-2" />
-        <circle cx="130" cy="140" r="3" fill="#fbbf24" class="sparkle sparkle-3" />
-        <circle cx="70" cy="150" r="2" fill="#fbbf24" class="sparkle sparkle-4" />
-    """ if animate else ""
+    sparkles_html = ""
+    if animate:
+        sparkles_html = """
+            <circle cx="60" cy="50" r="3" fill="#fbbf24" class="sparkle sparkle-1"></circle>
+            <circle cx="140" cy="70" r="2" fill="#fbbf24" class="sparkle sparkle-2"></circle>
+            <circle cx="130" cy="140" r="3" fill="#fbbf24" class="sparkle sparkle-3"></circle>
+            <circle cx="70" cy="150" r="2" fill="#fbbf24" class="sparkle sparkle-4"></circle>
+        """
     
-    return f"""
-    <svg width="200" height="200" viewBox="0 0 200 200" class="{animation_class}" style="margin: 0 auto; display: block;">
-        <defs>
-            <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-        
-        <!-- Main leaf body -->
-        <ellipse cx="100" cy="100" rx="60" ry="80" fill="url(#leafGradient)" transform="rotate(-20 100 100)" />
-        
-        <!-- Leaf vein -->
-        <line x1="70" y1="60" x2="120" y2="140" stroke="#15803d" stroke-width="3" />
-        
-        <!-- Secondary veins -->
-        <line x1="88" y1="80" x2="60" y2="90" stroke="#15803d" stroke-width="2" opacity="0.7" />
-        <line x1="95" y1="95" x2="65" y2="110" stroke="#15803d" stroke-width="2" opacity="0.7" />
-        <line x1="102" y1="110" x2="72" y2="130" stroke="#15803d" stroke-width="2" opacity="0.7" />
-        <line x1="105" y1="85" x2="135" y2="95" stroke="#15803d" stroke-width="2" opacity="0.7" />
-        <line x1="112" y1="105" x2="142" y2="115" stroke="#15803d" stroke-width="2" opacity="0.7" />
-        
-        <!-- Sparkles -->
-        {sparkles}
-        
-        <!-- Footprint overlay -->
-        <g opacity="0.3">
-            <ellipse cx="100" cy="160" rx="15" ry="10" fill="#064e3b" />
-            <circle cx="90" cy="150" r="4" fill="#064e3b" />
-            <circle cx="95" cy="148" r="3" fill="#064e3b" />
-            <circle cx="100" cy="147" r="3" fill="#064e3b" />
-            <circle cx="105" cy="148" r="3" fill="#064e3b" />
-            <circle cx="110" cy="150" r="4" fill="#064e3b" />
-        </g>
-    </svg>
+    # Use a unique ID for the gradient to avoid conflicts
+    gradient_id = f"leafGradient{random.randint(1000, 9999)}"
+    
+    svg_html = f"""
+    <div style="text-align: center; margin: 10px 0;">
+        <svg width="200" height="200" viewBox="0 0 200 200" class="{animation_class}" style="margin: 0 auto; display: block;">
+            <defs>
+                <linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1"></stop>
+                    <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1"></stop>
+                </linearGradient>
+            </defs>
+            
+            <ellipse cx="100" cy="100" rx="60" ry="80" fill="url(#{gradient_id})" transform="rotate(-20 100 100)"></ellipse>
+            
+            <line x1="70" y1="60" x2="120" y2="140" stroke="#15803d" stroke-width="3"></line>
+            
+            <line x1="88" y1="80" x2="60" y2="90" stroke="#15803d" stroke-width="2" opacity="0.7"></line>
+            <line x1="95" y1="95" x2="65" y2="110" stroke="#15803d" stroke-width="2" opacity="0.7"></line>
+            <line x1="102" y1="110" x2="72" y2="130" stroke="#15803d" stroke-width="2" opacity="0.7"></line>
+            <line x1="105" y1="85" x2="135" y2="95" stroke="#15803d" stroke-width="2" opacity="0.7"></line>
+            <line x1="112" y1="105" x2="142" y2="115" stroke="#15803d" stroke-width="2" opacity="0.7"></line>
+            
+            {sparkles_html}
+            
+            <g opacity="0.3">
+                <ellipse cx="100" cy="160" rx="15" ry="10" fill="#064e3b"></ellipse>
+                <circle cx="90" cy="150" r="4" fill="#064e3b"></circle>
+                <circle cx="95" cy="148" r="3" fill="#064e3b"></circle>
+                <circle cx="100" cy="147" r="3" fill="#064e3b"></circle>
+                <circle cx="105" cy="148" r="3" fill="#064e3b"></circle>
+                <circle cx="110" cy="150" r="4" fill="#064e3b"></circle>
+            </g>
+        </svg>
+    </div>
     """
+    
+    return svg_html
 
 # ==================== DATA PERSISTENCE ====================
 @st.cache_data

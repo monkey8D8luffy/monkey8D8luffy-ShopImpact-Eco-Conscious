@@ -1,5 +1,5 @@
 """
-ShopImpact - Streamlit Version (Refined)
+ShopImpact - Streamlit Version (Optimized)
 A colorful, interactive, and friendly web app to help users become mindful, eco-conscious shoppers.
 """
 
@@ -96,13 +96,70 @@ SPENDING_BADGES = [
     {'name': 'Eco Warrior', 'icon': '🦸', 'limit': 30, 'type': 'co2', 'description': 'Keep CO₂ under 30kg/month'},
 ]
 
+# Additional badges from React version
+ACHIEVEMENT_BADGES = [
+    {'name': 'Low Impact Shopper', 'icon': '🌱', 'condition': 'eco_friendly_5', 'description': '5+ eco-friendly items'},
+    {'name': 'Second-Hand Hero', 'icon': '♻️', 'condition': 'second_hand_3', 'description': '3+ second-hand items'},
+    {'name': 'Tracking Champion', 'icon': '📊', 'condition': 'purchases_10', 'description': '10+ purchases logged'},
+    {'name': 'Carbon Minimalist', 'icon': '✨', 'condition': 'avg_co2_low', 'description': 'Avg CO₂ < 1.0 kg'},
+]
+
 ECO_FRIENDLY_CATEGORIES = ['Second-Hand Item', 'Local Groceries', 'Books (Used)']
 
 DATA_FILE = Path("shopimpact_data.json")
 
+# ==================== SVG ECO GRAPHIC ====================
+def get_eco_graphic_svg(animate: bool = False) -> str:
+    """Generate SVG eco graphic (leaf with sparkles)"""
+    animation_class = 'eco-graphic-animate' if animate else ''
+    sparkles = """
+        <circle cx="60" cy="50" r="3" fill="#fbbf24" class="sparkle sparkle-1" />
+        <circle cx="140" cy="70" r="2" fill="#fbbf24" class="sparkle sparkle-2" />
+        <circle cx="130" cy="140" r="3" fill="#fbbf24" class="sparkle sparkle-3" />
+        <circle cx="70" cy="150" r="2" fill="#fbbf24" class="sparkle sparkle-4" />
+    """ if animate else ""
+    
+    return f"""
+    <svg width="200" height="200" viewBox="0 0 200 200" class="{animation_class}" style="margin: 0 auto; display: block;">
+        <defs>
+            <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        
+        <!-- Main leaf body -->
+        <ellipse cx="100" cy="100" rx="60" ry="80" fill="url(#leafGradient)" transform="rotate(-20 100 100)" />
+        
+        <!-- Leaf vein -->
+        <line x1="70" y1="60" x2="120" y2="140" stroke="#15803d" stroke-width="3" />
+        
+        <!-- Secondary veins -->
+        <line x1="88" y1="80" x2="60" y2="90" stroke="#15803d" stroke-width="2" opacity="0.7" />
+        <line x1="95" y1="95" x2="65" y2="110" stroke="#15803d" stroke-width="2" opacity="0.7" />
+        <line x1="102" y1="110" x2="72" y2="130" stroke="#15803d" stroke-width="2" opacity="0.7" />
+        <line x1="105" y1="85" x2="135" y2="95" stroke="#15803d" stroke-width="2" opacity="0.7" />
+        <line x1="112" y1="105" x2="142" y2="115" stroke="#15803d" stroke-width="2" opacity="0.7" />
+        
+        <!-- Sparkles -->
+        {sparkles}
+        
+        <!-- Footprint overlay -->
+        <g opacity="0.3">
+            <ellipse cx="100" cy="160" rx="15" ry="10" fill="#064e3b" />
+            <circle cx="90" cy="150" r="4" fill="#064e3b" />
+            <circle cx="95" cy="148" r="3" fill="#064e3b" />
+            <circle cx="100" cy="147" r="3" fill="#064e3b" />
+            <circle cx="105" cy="148" r="3" fill="#064e3b" />
+            <circle cx="110" cy="150" r="4" fill="#064e3b" />
+        </g>
+    </svg>
+    """
+
 # ==================== DATA PERSISTENCE ====================
-def load_data() -> Dict:
-    """Load data from JSON file"""
+@st.cache_data
+def load_data_cached() -> Dict:
+    """Load data from JSON file (cached)"""
     if DATA_FILE.exists():
         try:
             with open(DATA_FILE, 'r') as f:
@@ -117,6 +174,8 @@ def save_data(data: Dict) -> None:
     try:
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
+        # Clear cache to reload fresh data
+        load_data_cached.clear()
     except Exception as e:
         st.error(f"Error saving data: {e}")
 
@@ -131,17 +190,22 @@ def get_default_data() -> Dict:
             'monthlyBudget': 15000,
             'co2Goal': 50,
             'joinDate': datetime.now().strftime('%Y-%m-%d')
+        },
+        'settings': {
+            'highContrast': False
         }
     }
 
 # ==================== SESSION STATE INITIALIZATION ====================
 if 'initialized' not in st.session_state:
-    data = load_data()
+    data = load_data_cached()
     st.session_state.purchases = data.get('purchases', [])
     st.session_state.user_profile = data.get('user_profile', get_default_data()['user_profile'])
+    st.session_state.settings = data.get('settings', get_default_data()['settings'])
     st.session_state.show_success = False
     st.session_state.success_message = ''
     st.session_state.show_delete_confirm = False
+    st.session_state.show_celebration = False
     st.session_state.initialized = True
 
 # ==================== HELPER FUNCTIONS ====================
@@ -154,7 +218,7 @@ def calculate_co2(price: float, product_type: str) -> float:
 @st.cache_data
 def get_monthly_stats(purchases: tuple) -> Dict:
     """Calculate statistics for current month (cached for performance)"""
-    purchases = list(purchases)  # Convert tuple back to list for processing
+    purchases = list(purchases)
     
     if not purchases:
         return {'totalSpend': 0, 'totalCO2': 0, 'ecoFriendlyPercent': 0, 'totalPurchases': 0}
@@ -186,16 +250,34 @@ def get_monthly_stats(purchases: tuple) -> Dict:
         'totalPurchases': len(monthly_purchases)
     }
 
-def get_earned_badges(stats: Dict) -> List[Dict]:
-    """Get badges earned based on current stats"""
+def get_all_badges(purchases: List[Dict], monthly_stats: Dict) -> List[Dict]:
+    """Get all earned badges (spending + achievements)"""
     earned = []
+    
+    # Spending badges
     for badge in SPENDING_BADGES:
         if badge['type'] == 'co2':
-            if 0 < stats['totalCO2'] <= badge['limit']:
+            if 0 < monthly_stats['totalCO2'] <= badge['limit']:
                 earned.append(badge)
         else:
-            if 0 < stats['totalSpend'] <= badge['limit']:
+            if 0 < monthly_stats['totalSpend'] <= badge['limit']:
                 earned.append(badge)
+    
+    # Achievement badges
+    eco_friendly_count = sum(1 for p in purchases if p['type'] in ECO_FRIENDLY_CATEGORIES)
+    second_hand_count = sum(1 for p in purchases if p['type'] == 'Second-Hand Item')
+    avg_co2 = monthly_stats['totalCO2'] / monthly_stats['totalPurchases'] if monthly_stats['totalPurchases'] > 0 else 0
+    
+    for badge in ACHIEVEMENT_BADGES:
+        if badge['condition'] == 'eco_friendly_5' and eco_friendly_count >= 5:
+            earned.append(badge)
+        elif badge['condition'] == 'second_hand_3' and second_hand_count >= 3:
+            earned.append(badge)
+        elif badge['condition'] == 'purchases_10' and len(purchases) >= 10:
+            earned.append(badge)
+        elif badge['condition'] == 'avg_co2_low' and avg_co2 < 1.0 and len(purchases) >= 3:
+            earned.append(badge)
+    
     return earned
 
 def add_purchase(product_type: str, brand: str, price: float) -> None:
@@ -213,15 +295,18 @@ def add_purchase(product_type: str, brand: str, price: float) -> None:
     # Save to file
     save_data({
         'purchases': st.session_state.purchases,
-        'user_profile': st.session_state.user_profile
+        'user_profile': st.session_state.user_profile,
+        'settings': st.session_state.settings
     })
     
-    # Set success message
+    # Set success message and celebration
     if product_type in ECO_FRIENDLY_CATEGORIES:
         st.session_state.success_message = f"🌟 Eco-friendly choice! You're making a difference!"
+        st.session_state.show_celebration = True
         st.balloons()
     else:
         st.session_state.success_message = f"✅ Logged! Your {product_type} added {co2_impact:.1f} kg of CO₂."
+        st.session_state.show_celebration = False
     st.session_state.show_success = True
 
 def delete_purchase(index: int) -> None:
@@ -230,45 +315,13 @@ def delete_purchase(index: int) -> None:
         st.session_state.purchases.pop(index)
         save_data({
             'purchases': st.session_state.purchases,
-            'user_profile': st.session_state.user_profile
+            'user_profile': st.session_state.user_profile,
+            'settings': st.session_state.settings
         })
-
-def filter_purchases_by_date(purchases: List[Dict], start_date: Optional[datetime], end_date: Optional[datetime]) -> List[Dict]:
-    """Filter purchases by date range"""
-    if not start_date and not end_date:
-        return purchases
-    
-    filtered = []
-    for p in purchases:
-        purchase_date = datetime.strptime(p['date'], '%Y-%m-%d').date()
-        if start_date and purchase_date < start_date:
-            continue
-        if end_date and purchase_date > end_date:
-            continue
-        filtered.append(p)
-    
-    return filtered
-
-def filter_purchases_by_category(purchases: List[Dict], categories: List[str]) -> List[Dict]:
-    """Filter purchases by categories"""
-    if not categories:
-        return purchases
-    return [p for p in purchases if p['type'] in categories]
-
-def search_purchases(purchases: List[Dict], query: str) -> List[Dict]:
-    """Search purchases by brand or type"""
-    if not query:
-        return purchases
-    
-    query = query.lower()
-    return [
-        p for p in purchases 
-        if query in p['brand'].lower() or query in p['type'].lower()
-    ]
 
 # ==================== VISUALIZATION FUNCTIONS ====================
 @st.cache_data
-def create_co2_by_category_chart(purchases_tuple: tuple) -> go.Figure:
+def create_co2_by_category_chart(purchases_tuple: tuple, high_contrast: bool = False) -> go.Figure:
     """Create bar chart for CO2 by category"""
     purchases = list(purchases_tuple)
     if not purchases:
@@ -279,26 +332,33 @@ def create_co2_by_category_chart(purchases_tuple: tuple) -> go.Figure:
     category_data.columns = ['Category', 'CO2 (kg)']
     category_data = category_data.sort_values('CO2 (kg)', ascending=False)
     
+    color_scale = 'Greys' if high_contrast else 'Greens'
+    
     fig = px.bar(
         category_data,
         x='Category',
         y='CO2 (kg)',
         color='CO2 (kg)',
-        color_continuous_scale='Greens',
+        color_continuous_scale=color_scale,
         title='CO₂ Impact by Category'
     )
+    
+    bg_color = '#000000' if high_contrast else 'rgba(0,0,0,0)'
+    text_color = '#FFFFFF' if high_contrast else '#374151'
+    
     fig.update_layout(
         showlegend=False,
         xaxis_tickangle=-45,
         height=400,
         margin=dict(l=20, r=20, t=40, b=100),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)'
+        plot_bgcolor=bg_color,
+        paper_bgcolor=bg_color,
+        font=dict(color=text_color)
     )
     return fig
 
 @st.cache_data
-def create_cumulative_co2_chart(purchases_tuple: tuple) -> go.Figure:
+def create_cumulative_co2_chart(purchases_tuple: tuple, high_contrast: bool = False) -> go.Figure:
     """Create line chart for cumulative CO2 over time"""
     purchases = list(purchases_tuple)
     if not purchases:
@@ -308,6 +368,10 @@ def create_cumulative_co2_chart(purchases_tuple: tuple) -> go.Figure:
     df = df.sort_values('date')
     df['cumulative_co2'] = df['co2_impact'].cumsum()
     
+    line_color = '#FFFFFF' if high_contrast else '#16a34a'
+    bg_color = '#000000' if high_contrast else 'rgba(0,0,0,0)'
+    text_color = '#FFFFFF' if high_contrast else '#374151'
+    
     fig = px.line(
         df,
         x='date',
@@ -316,17 +380,18 @@ def create_cumulative_co2_chart(purchases_tuple: tuple) -> go.Figure:
         labels={'cumulative_co2': 'Cumulative CO₂ (kg)', 'date': 'Date'},
         title='Cumulative CO₂ Over Time'
     )
-    fig.update_traces(line_color='#16a34a', line_width=3, marker=dict(size=8))
+    fig.update_traces(line_color=line_color, line_width=3, marker=dict(size=8))
     fig.update_layout(
         height=400,
         margin=dict(l=20, r=20, t=40, b=40),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)'
+        plot_bgcolor=bg_color,
+        paper_bgcolor=bg_color,
+        font=dict(color=text_color)
     )
     return fig
 
 @st.cache_data
-def create_spending_by_category_chart(purchases_tuple: tuple) -> go.Figure:
+def create_spending_by_category_chart(purchases_tuple: tuple, high_contrast: bool = False) -> go.Figure:
     """Create pie chart for spending by category"""
     purchases = list(purchases_tuple)
     if not purchases:
@@ -336,108 +401,245 @@ def create_spending_by_category_chart(purchases_tuple: tuple) -> go.Figure:
     category_data = df.groupby('type')['price'].sum().reset_index()
     category_data.columns = ['Category', 'Spending']
     
+    color_scale = px.colors.sequential.Greys if high_contrast else px.colors.sequential.Greens_r
+    bg_color = '#000000' if high_contrast else 'rgba(0,0,0,0)'
+    text_color = '#FFFFFF' if high_contrast else '#374151'
+    
     fig = px.pie(
         category_data,
         values='Spending',
         names='Category',
         title='Spending Distribution',
-        color_discrete_sequence=px.colors.sequential.Greens_r
+        color_discrete_sequence=color_scale
     )
     fig.update_layout(
         height=400,
-        margin=dict(l=20, r=20, t=40, b=20)
+        margin=dict(l=20, r=20, t=40, b=20),
+        paper_bgcolor=bg_color,
+        font=dict(color=text_color)
     )
     return fig
 
 # ==================== CUSTOM CSS ====================
-st.markdown("""
-<style>
-    /* Main background */
-    .main {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 50%, #d1fae5 100%);
-    }
-    
-    /* Tab styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: white;
-        border-radius: 10px;
-        padding: 5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-weight: 600;
-    }
-    
-    /* Card styles */
-    .eco-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border: 2px solid #10b981;
-        margin: 10px 0;
-    }
-    .badge-card {
-        background-color: #d1fae5;
-        padding: 15px;
-        border-radius: 10px;
-        border: 2px solid #10b981;
-        margin: 10px 0;
-        text-align: center;
-    }
-    .tip-card {
-        background-color: #dbeafe;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 4px solid #3b82f6;
-        margin: 10px 0;
-    }
-    .quote-card {
-        background-color: #e9d5ff;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 4px solid #a855f7;
-        margin: 10px 0;
-    }
-    .stat-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-    
-    /* Button improvements */
-    .stButton > button {
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    /* Form improvements */
-    .stNumberInput > div > div > input,
-    .stTextInput > div > div > input,
-    .stSelectbox > div > div > div {
-        border-radius: 8px;
-    }
-    
-    /* Metric styling */
-    [data-testid="stMetricValue"] {
-        font-size: 28px;
-        font-weight: bold;
-    }
-</style>
-""", unsafe_allow_html=True)
+def get_custom_css(high_contrast: bool = False) -> str:
+    """Generate custom CSS based on contrast mode"""
+    if high_contrast:
+        return """
+        <style>
+            /* High Contrast Mode */
+            .main {
+                background: #000000 !important;
+                color: #FFFFFF !important;
+            }
+            
+            .stTabs [data-baseweb="tab-list"] {
+                background-color: #1a1a1a !important;
+                border: 2px solid #FFFFFF !important;
+            }
+            
+            .stTabs [data-baseweb="tab"] {
+                color: #FFFFFF !important;
+                border: 1px solid #FFFFFF !important;
+            }
+            
+            .stTabs [data-baseweb="tab"][aria-selected="true"] {
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+            }
+            
+            /* Cards */
+            .eco-card, .tip-card, .quote-card, .badge-card, .stat-card {
+                background-color: #1a1a1a !important;
+                border: 2px solid #FFFFFF !important;
+                color: #FFFFFF !important;
+            }
+            
+            /* Buttons */
+            .stButton > button {
+                border: 2px solid #FFFFFF !important;
+                color: #FFFFFF !important;
+                background-color: #000000 !important;
+            }
+            
+            .stButton > button:hover {
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+            }
+            
+            /* Forms */
+            .stTextInput > div > div > input,
+            .stNumberInput > div > div > input,
+            .stSelectbox > div > div {
+                background-color: #1a1a1a !important;
+                color: #FFFFFF !important;
+                border: 2px solid #FFFFFF !important;
+            }
+            
+            /* Metrics */
+            [data-testid="stMetricValue"] {
+                color: #FFFFFF !important;
+            }
+            
+            /* Text */
+            h1, h2, h3, h4, h5, h6, p, span, label {
+                color: #FFFFFF !important;
+            }
+            
+            /* Dataframe */
+            .stDataFrame {
+                border: 2px solid #FFFFFF !important;
+            }
+            
+            /* Animation */
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-20px); }
+            }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+            }
+            
+            .eco-graphic-animate {
+                animation: bounce 1s ease-in-out 3;
+            }
+            
+            .sparkle {
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+            
+            .sparkle-1 { animation-delay: 0s; }
+            .sparkle-2 { animation-delay: 0.2s; }
+            .sparkle-3 { animation-delay: 0.4s; }
+            .sparkle-4 { animation-delay: 0.6s; }
+        </style>
+        """
+    else:
+        return """
+        <style>
+            /* Normal Mode */
+            .main {
+                background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 50%, #d1fae5 100%);
+            }
+            
+            .stTabs [data-baseweb="tab-list"] {
+                gap: 8px;
+                background-color: white;
+                border-radius: 10px;
+                padding: 5px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .stTabs [data-baseweb="tab"] {
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-weight: 600;
+            }
+            
+            /* Card styles */
+            .eco-card {
+                background-color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border: 2px solid #10b981;
+                margin: 10px 0;
+            }
+            
+            .badge-card {
+                background-color: #d1fae5;
+                padding: 15px;
+                border-radius: 10px;
+                border: 2px solid #10b981;
+                margin: 10px 0;
+                text-align: center;
+            }
+            
+            .tip-card {
+                background-color: #dbeafe;
+                padding: 15px;
+                border-radius: 10px;
+                border-left: 4px solid #3b82f6;
+                margin: 10px 0;
+            }
+            
+            .quote-card {
+                background-color: #e9d5ff;
+                padding: 15px;
+                border-radius: 10px;
+                border-left: 4px solid #a855f7;
+                margin: 10px 0;
+            }
+            
+            .stat-card {
+                background-color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                text-align: center;
+            }
+            
+            /* Button improvements */
+            .stButton > button {
+                border-radius: 8px;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            }
+            
+            /* Form improvements */
+            .stNumberInput > div > div > input,
+            .stTextInput > div > div > input,
+            .stSelectbox > div > div > div {
+                border-radius: 8px;
+            }
+            
+            /* Metric styling */
+            [data-testid="stMetricValue"] {
+                font-size: 28px;
+                font-weight: bold;
+            }
+            
+            /* Animation */
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-20px); }
+            }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+            }
+            
+            .eco-graphic-animate {
+                animation: bounce 1s ease-in-out 3;
+            }
+            
+            .sparkle {
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+            
+            .sparkle-1 { animation-delay: 0s; }
+            .sparkle-2 { animation-delay: 0.2s; }
+            .sparkle-3 { animation-delay: 0.4s; }
+            .sparkle-4 { animation-delay: 0.6s; }
+        </style>
+        """
+
+# Apply CSS
+high_contrast = st.session_state.settings.get('highContrast', False)
+st.markdown(get_custom_css(high_contrast), unsafe_allow_html=True)
 
 # ==================== HEADER ====================
-st.markdown("<h1 style='text-align: center; color: #16a34a;'>🍃 ShopImpact 🍃</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #6b7280; font-size: 18px;'>Your friendly guide to conscious shopping.</p>", unsafe_allow_html=True)
+header_color = '#FFFFFF' if high_contrast else '#16a34a'
+subheader_color = '#CCCCCC' if high_contrast else '#6b7280'
+welcome_color = '#FFFFFF' if high_contrast else '#16a34a'
+
+st.markdown(f"<h1 style='text-align: center; color: {header_color};'>🍃 ShopImpact 🍃</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: {subheader_color}; font-size: 18px;'>Your friendly guide to conscious shopping.</p>", unsafe_allow_html=True)
 
 if st.session_state.user_profile['name']:
-    st.markdown(f"<p style='text-align: center; color: #16a34a; font-size: 16px;'>Welcome back, {st.session_state.user_profile['name']}! 🌟</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; color: {welcome_color}; font-size: 16px;'>Welcome back, {st.session_state.user_profile['name']}! 🌟</p>", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -521,36 +723,49 @@ with tab1:
             st.success(st.session_state.success_message)
             st.session_state.show_success = False
         
-        # Show alternatives for last purchase
+        # Show alternatives and eco graphic
         if st.session_state.purchases:
             last_purchase = st.session_state.purchases[-1]
             alternatives = ETHICAL_ALTERNATIVES.get(last_purchase['type'], [])
-            if alternatives:
-                is_eco = last_purchase['type'] in ECO_FRIENDLY_CATEGORIES
-                
-                if is_eco:
-                    st.markdown(f"""
-                    <div style="background-color: #d1fae5; padding: 15px; border-radius: 10px; 
-                                border-left: 4px solid #10b981; margin: 10px 0;">
-                        <h4 style="color: #16a34a; margin-top: 0;">🎉 Amazing Choice!</h4>
-                        <ul style="margin-bottom: 0;">
-                            {''.join([f'<li>{alt}</li>' for alt in alternatives])}
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div class="tip-card">
-                        <h4 style="color: #2563eb; margin-top: 0;">✨ Greener choices for {last_purchase['type']}:</h4>
-                        <ul style="margin-bottom: 0;">
-                            {''.join([f'<li>{alt}</li>' for alt in alternatives])}
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
+            
+            col_alt, col_graphic = st.columns([2, 1])
+            
+            with col_alt:
+                if alternatives:
+                    is_eco = last_purchase['type'] in ECO_FRIENDLY_CATEGORIES
+                    
+                    if is_eco:
+                        st.markdown(f"""
+                        <div style="background-color: {'#1a5f3a' if high_contrast else '#d1fae5'}; 
+                                    padding: 15px; border-radius: 10px; 
+                                    border-left: 4px solid {'#FFFFFF' if high_contrast else '#10b981'}; margin: 10px 0;
+                                    color: {'#FFFFFF' if high_contrast else '#000000'};">
+                            <h4 style="color: {'#FFFFFF' if high_contrast else '#16a34a'}; margin-top: 0;">🎉 Amazing Choice!</h4>
+                            <ul style="margin-bottom: 0;">
+                                {''.join([f'<li>{alt}</li>' for alt in alternatives])}
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div class="tip-card" style="background-color: {'#1a3a5f' if high_contrast else '#dbeafe'};">
+                            <h4 style="color: {'#FFFFFF' if high_contrast else '#2563eb'}; margin-top: 0;">✨ Greener choices for {last_purchase['type']}:</h4>
+                            <ul style="margin-bottom: 0;">
+                                {''.join([f'<li>{alt}</li>' for alt in alternatives])}
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            with col_graphic:
+                # Show eco graphic for eco-friendly purchases
+                if last_purchase['type'] in ECO_FRIENDLY_CATEGORIES or st.session_state.show_celebration:
+                    st.markdown(get_eco_graphic_svg(animate=st.session_state.show_celebration), unsafe_allow_html=True)
+                    if st.session_state.show_celebration:
+                        st.session_state.show_celebration = False
         
         st.markdown("---")
         
-        # Dashboard
+        # Dashboard section (rest of the code continues as before...)
         st.markdown("### 📈 Your Shopping Dashboard")
         
         # Filter and search controls
@@ -563,7 +778,6 @@ with tab1:
             with col_f3:
                 search_query = st.text_input("Search", placeholder="Brand or category...", key="search")
             
-            # Category filter
             selected_categories = st.multiselect(
                 "Filter by Categories",
                 options=list(PRODUCT_MULTIPLIERS.keys()),
@@ -573,9 +787,24 @@ with tab1:
         
         # Filter purchases
         filtered_purchases = st.session_state.purchases.copy()
-        filtered_purchases = filter_purchases_by_date(filtered_purchases, start_date, end_date)
-        filtered_purchases = filter_purchases_by_category(filtered_purchases, selected_categories)
-        filtered_purchases = search_purchases(filtered_purchases, search_query)
+        
+        # Apply filters
+        if start_date or end_date:
+            filtered_purchases = [
+                p for p in filtered_purchases
+                if (not start_date or datetime.strptime(p['date'], '%Y-%m-%d').date() >= start_date)
+                and (not end_date or datetime.strptime(p['date'], '%Y-%m-%d').date() <= end_date)
+            ]
+        
+        if selected_categories:
+            filtered_purchases = [p for p in filtered_purchases if p['type'] in selected_categories]
+        
+        if search_query:
+            search_query = search_query.lower()
+            filtered_purchases = [
+                p for p in filtered_purchases 
+                if search_query in p['brand'].lower() or search_query in p['type'].lower()
+            ]
         
         if filtered_purchases:
             total_co2 = sum(p['co2_impact'] for p in filtered_purchases)
@@ -601,17 +830,17 @@ with tab1:
             chart_col1, chart_col2 = st.columns(2)
             
             with chart_col1:
-                fig_bar = create_co2_by_category_chart(tuple(filtered_purchases))
+                fig_bar = create_co2_by_category_chart(tuple(filtered_purchases), high_contrast)
                 if fig_bar:
                     st.plotly_chart(fig_bar, use_container_width=True)
             
             with chart_col2:
-                fig_pie = create_spending_by_category_chart(tuple(filtered_purchases))
+                fig_pie = create_spending_by_category_chart(tuple(filtered_purchases), high_contrast)
                 if fig_pie:
                     st.plotly_chart(fig_pie, use_container_width=True)
             
-            # Line chart (full width)
-            fig_line = create_cumulative_co2_chart(tuple(filtered_purchases))
+            # Line chart
+            fig_line = create_cumulative_co2_chart(tuple(filtered_purchases), high_contrast)
             if fig_line:
                 st.plotly_chart(fig_line, use_container_width=True)
             
@@ -640,7 +869,7 @@ with tab1:
                     use_container_width=True
                 )
             
-            # Display table with delete option
+            # Display table
             display_df = df_purchases[['date', 'type', 'brand', 'price', 'co2_impact']].copy()
             display_df.columns = ['Date', 'Product Type', 'Brand', 'Price (₹)', 'CO₂ (kg)']
             display_df = display_df.sort_values('Date', ascending=False).reset_index(drop=True)
@@ -661,19 +890,38 @@ with tab1:
     with col_sidebar:
         st.markdown("### 🏆 Rewards & Tips")
         
-        # Calculate monthly stats (convert list to tuple for caching)
+        # High Contrast Toggle
+        contrast_label = "🌓 High Contrast Mode" if high_contrast else "🌓 High Contrast Mode"
+        new_contrast = st.checkbox(contrast_label, value=high_contrast, key="contrast_toggle")
+        
+        if new_contrast != high_contrast:
+            st.session_state.settings['highContrast'] = new_contrast
+            save_data({
+                'purchases': st.session_state.purchases,
+                'user_profile': st.session_state.user_profile,
+                'settings': st.session_state.settings
+            })
+            st.rerun()
+        
+        st.markdown("---")
+        
+        # Calculate stats
         monthly_stats = get_monthly_stats(tuple(st.session_state.purchases))
-        earned_badges = get_earned_badges(monthly_stats)
+        all_badges = get_all_badges(st.session_state.purchases, monthly_stats)
         
         # Show badges
         st.markdown("#### Your Badges")
-        if earned_badges:
-            for badge in earned_badges:
+        if all_badges:
+            for badge in all_badges[:5]:  # Show top 5
+                badge_bg = '#1a1a1a' if high_contrast else '#d1fae5'
+                badge_border = '#FFFFFF' if high_contrast else '#10b981'
+                badge_text = '#FFFFFF' if high_contrast else '#000000'
+                
                 st.markdown(f"""
-                <div class="badge-card">
+                <div class="badge-card" style="background-color: {badge_bg}; border-color: {badge_border}; color: {badge_text};">
                     <span style="font-size: 32px;">{badge['icon']}</span>
                     <p style="margin: 5px 0; font-weight: bold;">{badge['name']}</p>
-                    <p style="margin: 0; font-size: 12px; color: #666;">{badge['description']}</p>
+                    <p style="margin: 0; font-size: 12px; opacity: 0.8;">{badge.get('description', '')}</p>
                 </div>
                 """, unsafe_allow_html=True)
         else:
@@ -682,21 +930,33 @@ with tab1:
         st.markdown("---")
         
         # Eco Tip
+        tip_bg = '#1a3a5f' if high_contrast else '#dbeafe'
+        tip_text = '#FFFFFF' if high_contrast else '#2563eb'
+        
         st.markdown(f"""
-        <div class="tip-card">
-            <h4 style="color: #2563eb; margin-top: 0;">💡 Eco Tip</h4>
-            <p style="margin-bottom: 0;">{random.choice(TIPS_LIST)}</p>
+        <div class="tip-card" style="background-color: {tip_bg};">
+            <h4 style="color: {tip_text}; margin-top: 0;">💡 Eco Tip</h4>
+            <p style="margin-bottom: 0; color: {tip_text};">{random.choice(TIPS_LIST)}</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Motivational Quote
+        quote_bg = '#3a1a5f' if high_contrast else '#e9d5ff'
+        quote_text = '#FFFFFF' if high_contrast else '#a855f7'
+        
         st.markdown(f"""
-        <div class="quote-card">
-            <p style="font-style: italic; margin: 0;">"{random.choice(MOTIVATIONAL_QUOTES)}"</p>
+        <div class="quote-card" style="background-color: {quote_bg};">
+            <p style="font-style: italic; margin: 0; color: {quote_text};">"{random.choice(MOTIVATIONAL_QUOTES)}"</p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("---")
+        
+        # Show eco graphic if user has eco purchases
+        has_eco = any(p['type'] in ECO_FRIENDLY_CATEGORIES for p in st.session_state.purchases)
+        if has_eco:
+            st.markdown(get_eco_graphic_svg(animate=False), unsafe_allow_html=True)
+            st.markdown("---")
         
         # Reset button with confirmation
         if st.button("🔄 Clear All Data", type="secondary", use_container_width=True):
@@ -710,7 +970,8 @@ with tab1:
                     st.session_state.purchases = []
                     save_data({
                         'purchases': [],
-                        'user_profile': st.session_state.user_profile
+                        'user_profile': st.session_state.user_profile,
+                        'settings': st.session_state.settings
                     })
                     st.session_state.show_delete_confirm = False
                     st.success("✨ Data cleared!")
@@ -734,8 +995,6 @@ with tab1:
             if total_items > 0:
                 eco_percent = (eco_items / total_items) * 100
                 st.write(f"**Eco rate:** {eco_percent:.0f}%")
-                
-                # Progress bar for eco-friendliness
                 st.progress(min(eco_percent / 100, 1.0))
 
 # ==================== PROFILE TAB ====================
@@ -748,17 +1007,22 @@ with tab2:
     col_avatar, col_info = st.columns([1, 4])
     with col_avatar:
         avatar_letter = profile['name'][0].upper() if profile['name'] else '?'
+        avatar_bg = '#FFFFFF' if high_contrast else '#16a34a'
+        avatar_text = '#000000' if high_contrast else 'white'
+        
         st.markdown(f"""
         <div style="width: 80px; height: 80px; border-radius: 50%; 
-                    background-color: #16a34a; color: white; 
+                    background-color: {avatar_bg}; color: {avatar_text}; 
                     display: flex; align-items: center; justify-content: center;
-                    font-size: 36px; font-weight: bold; margin: 10px auto;">
+                    font-size: 36px; font-weight: bold; margin: 10px auto;
+                    border: {'2px solid #000000' if high_contrast else 'none'};">
             {avatar_letter}
         </div>
         """, unsafe_allow_html=True)
     
     with col_info:
-        st.markdown(f"## {profile['name'] if profile['name'] else 'Eco Hero'}")
+        name_color = '#FFFFFF' if high_contrast else '#000000'
+        st.markdown(f"<h2 style='color: {name_color};'>{profile['name'] if profile['name'] else 'Eco Hero'}</h2>", unsafe_allow_html=True)
         if profile['location']:
             st.write(f"📍 {profile['location']}")
         if profile['age']:
@@ -808,7 +1072,8 @@ with tab2:
                 }
                 save_data({
                     'purchases': st.session_state.purchases,
-                    'user_profile': st.session_state.user_profile
+                    'user_profile': st.session_state.user_profile,
+                    'settings': st.session_state.settings
                 })
                 st.success("✅ Profile updated successfully! 🎉")
                 st.rerun()
@@ -918,40 +1183,29 @@ with tab2:
     # Badges Section
     st.markdown("### 🏆 Your Badges")
     
-    earned_badges = get_earned_badges(monthly_stats)
+    all_badges = get_all_badges(st.session_state.purchases, monthly_stats)
     
-    if earned_badges:
-        badge_cols = st.columns(min(len(earned_badges), 3))
-        for idx, badge in enumerate(earned_badges):
+    if all_badges:
+        badge_cols = st.columns(min(len(all_badges), 3))
+        for idx, badge in enumerate(all_badges):
             with badge_cols[idx % len(badge_cols)]:
-                limit_text = f"CO₂ < {badge['limit']} kg" if badge['type'] == 'co2' else f"< ₹{badge['limit']:,}"
+                badge_bg = '#1a5f3a' if high_contrast else '#d1fae5'
+                badge_border = '#FFFFFF' if high_contrast else '#10b981'
+                badge_text = '#FFFFFF' if high_contrast else '#000000'
+                
+                limit_text = badge.get('description', '')
+                if 'limit' in badge:
+                    limit_text = f"CO₂ < {badge['limit']} kg" if badge['type'] == 'co2' else f"< ₹{badge['limit']:,}"
+                
                 st.markdown(f"""
-                <div class="badge-card">
+                <div class="badge-card" style="background-color: {badge_bg}; border-color: {badge_border}; color: {badge_text};">
                     <span style="font-size: 40px;">{badge['icon']}</span>
                     <p style="margin: 8px 0; font-weight: bold; font-size: 16px;">{badge['name']}</p>
-                    <p style="margin: 0; font-size: 12px; color: #666;">{limit_text}</p>
+                    <p style="margin: 0; font-size: 12px; opacity: 0.8;">{limit_text}</p>
                 </div>
                 """, unsafe_allow_html=True)
     else:
         st.info("🏅 No badges this month. Stay under limits to earn badges!")
-    
-    # Available badges
-    st.markdown("#### Available Badges")
-    badge_grid_cols = st.columns(5)
-    for idx, badge in enumerate(SPENDING_BADGES):
-        is_earned = any(b['name'] == badge['name'] for b in earned_badges)
-        with badge_grid_cols[idx % 5]:
-            opacity = "1.0" if is_earned else "0.4"
-            limit_text = f"<{badge['limit']}kg" if badge['type'] == 'co2' else f"<₹{badge['limit']/1000:.0f}k"
-            
-            st.markdown(f"""
-            <div style="background-color: {'#d1fae5' if is_earned else '#f3f4f6'}; 
-                        padding: 10px; border-radius: 8px; text-align: center;
-                        opacity: {opacity}; border: 1px solid {'#10b981' if is_earned else '#d1d5db'};">
-                <span style="font-size: 24px;">{badge['icon']}</span>
-                <p style="margin: 5px 0; font-size: 10px;">{limit_text}</p>
-            </div>
-            """, unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -962,47 +1216,46 @@ with tab2:
     total_spent = sum(p['price'] for p in st.session_state.purchases)
     total_eco = sum(1 for p in st.session_state.purchases 
                    if p['type'] in ECO_FRIENDLY_CATEGORIES)
-    total_co2_saved = sum(
-        (PRODUCT_MULTIPLIERS.get(p['type'], 1.0) - 0.1) * p['price']
-        for p in st.session_state.purchases
-        if p['type'] in ECO_FRIENDLY_CATEGORIES
-    )
     
     achieve_col1, achieve_col2, achieve_col3, achieve_col4 = st.columns(4)
     
+    stat_card_bg = '#1a1a1a' if high_contrast else 'white'
+    stat_card_border = '#FFFFFF' if high_contrast else '#e5e7eb'
+    stat_card_text = '#FFFFFF' if high_contrast else '#000000'
+    
     with achieve_col1:
         st.markdown(f"""
-        <div class="stat-card">
+        <div class="stat-card" style="background-color: {stat_card_bg}; border: 1px solid {stat_card_border}; color: {stat_card_text};">
             <p style="font-size: 32px; margin: 0;">🛍️</p>
             <p style="font-size: 24px; margin: 5px 0; font-weight: bold;">{total_purchases}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Purchases</p>
+            <p style="font-size: 12px; margin: 0; opacity: 0.7;">Purchases</p>
         </div>
         """, unsafe_allow_html=True)
     
     with achieve_col2:
         st.markdown(f"""
-        <div class="stat-card">
+        <div class="stat-card" style="background-color: {stat_card_bg}; border: 1px solid {stat_card_border}; color: {stat_card_text};">
             <p style="font-size: 32px; margin: 0;">💰</p>
             <p style="font-size: 24px; margin: 5px 0; font-weight: bold;">₹{total_spent:,.0f}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Total Spent</p>
+            <p style="font-size: 12px; margin: 0; opacity: 0.7;">Total Spent</p>
         </div>
         """, unsafe_allow_html=True)
     
     with achieve_col3:
         st.markdown(f"""
-        <div class="stat-card">
+        <div class="stat-card" style="background-color: {stat_card_bg}; border: 1px solid {stat_card_border}; color: {stat_card_text};">
             <p style="font-size: 32px; margin: 0;">🌱</p>
             <p style="font-size: 24px; margin: 5px 0; font-weight: bold;">{total_eco}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Eco Items</p>
+            <p style="font-size: 12px; margin: 0; opacity: 0.7;">Eco Items</p>
         </div>
         """, unsafe_allow_html=True)
     
     with achieve_col4:
         st.markdown(f"""
-        <div class="stat-card">
+        <div class="stat-card" style="background-color: {stat_card_bg}; border: 1px solid {stat_card_border}; color: {stat_card_text};">
             <p style="font-size: 32px; margin: 0;">🏆</p>
-            <p style="font-size: 24px; margin: 5px 0; font-weight: bold;">{len(earned_badges)}</p>
-            <p style="font-size: 12px; margin: 0; color: #666;">Badges</p>
+            <p style="font-size: 24px; margin: 5px 0; font-weight: bold;">{len(all_badges)}</p>
+            <p style="font-size: 12px; margin: 0; opacity: 0.7;">Badges</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1077,18 +1330,23 @@ with tab3:
                 df_time = df_filtered.groupby('date')['price'].sum().reset_index()
                 df_time = df_time.sort_values('date')
                 
+                area_color = '#FFFFFF' if high_contrast else '#16a34a'
+                bg_color = '#000000' if high_contrast else 'rgba(0,0,0,0)'
+                text_color = '#FFFFFF' if high_contrast else '#374151'
+                
                 fig_spending = px.area(
                     df_time,
                     x='date',
                     y='price',
                     labels={'price': 'Spending (₹)', 'date': 'Date'},
-                    color_discrete_sequence=['#16a34a']
+                    color_discrete_sequence=[area_color]
                 )
                 fig_spending.update_layout(
                     height=350,
                     margin=dict(l=20, r=20, t=20, b=40),
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)'
+                    plot_bgcolor=bg_color,
+                    paper_bgcolor=bg_color,
+                    font=dict(color=text_color)
                 )
                 st.plotly_chart(fig_spending, use_container_width=True)
             
@@ -1098,6 +1356,10 @@ with tab3:
                 category_spend = df_filtered.groupby('type')['price'].sum().reset_index()
                 category_spend = category_spend.sort_values('price', ascending=True).tail(10)
                 
+                color_scale = 'Greys' if high_contrast else 'Greens'
+                bg_color = '#000000' if high_contrast else 'rgba(0,0,0,0)'
+                text_color = '#FFFFFF' if high_contrast else '#374151'
+                
                 fig_top_cat = px.bar(
                     category_spend,
                     x='price',
@@ -1105,69 +1367,17 @@ with tab3:
                     orientation='h',
                     labels={'price': 'Total Spent (₹)', 'type': 'Category'},
                     color='price',
-                    color_continuous_scale='Greens'
+                    color_continuous_scale=color_scale
                 )
                 fig_top_cat.update_layout(
                     height=350,
                     margin=dict(l=20, r=20, t=20, b=40),
                     showlegend=False,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)'
+                    plot_bgcolor=bg_color,
+                    paper_bgcolor=bg_color,
+                    font=dict(color=text_color)
                 )
                 st.plotly_chart(fig_top_cat, use_container_width=True)
-            
-            chart_row2_col1, chart_row2_col2 = st.columns(2)
-            
-            # Brand analysis
-            with chart_row2_col1:
-                st.markdown("#### Top Brands")
-                brand_data = df_filtered.groupby('brand').agg({
-                    'price': 'sum',
-                    'co2_impact': 'sum'
-                }).reset_index()
-                brand_data = brand_data.sort_values('price', ascending=False).head(10)
-                
-                fig_brands = px.bar(
-                    brand_data,
-                    x='brand',
-                    y='price',
-                    labels={'price': 'Total Spent (₹)', 'brand': 'Brand'},
-                    color='co2_impact',
-                    color_continuous_scale='Reds'
-                )
-                fig_brands.update_layout(
-                    height=350,
-                    margin=dict(l=20, r=20, t=20, b=100),
-                    xaxis_tickangle=-45,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)'
-                )
-                st.plotly_chart(fig_brands, use_container_width=True)
-            
-            # CO2 distribution
-            with chart_row2_col2:
-                st.markdown("#### CO₂ Impact Distribution")
-                
-                # Create bins for CO2 impact
-                df_filtered['co2_bin'] = pd.cut(
-                    df_filtered['co2_impact'],
-                    bins=[0, 10, 50, 100, 500, float('inf')],
-                    labels=['0-10 kg', '10-50 kg', '50-100 kg', '100-500 kg', '500+ kg']
-                )
-                co2_dist = df_filtered['co2_bin'].value_counts().reset_index()
-                co2_dist.columns = ['CO2 Range', 'Count']
-                
-                fig_co2_dist = px.pie(
-                    co2_dist,
-                    values='Count',
-                    names='CO2 Range',
-                    color_discrete_sequence=px.colors.sequential.RdYlGn_r
-                )
-                fig_co2_dist.update_layout(
-                    height=350,
-                    margin=dict(l=20, r=20, t=20, b=20)
-                )
-                st.plotly_chart(fig_co2_dist, use_container_width=True)
             
             st.markdown("---")
             
@@ -1193,11 +1403,15 @@ with tab3:
                 highest_co2_cat = df_filtered.groupby('type')['co2_impact'].sum().idxmax()
                 highest_co2_val = df_filtered.groupby('type')['co2_impact'].sum().max()
                 
+                insight_bg = '#5f1a1a' if high_contrast else '#fee2e2'
+                insight_border = '#FFFFFF' if high_contrast else '#dc2626'
+                insight_text = '#FFFFFF' if high_contrast else '#dc2626'
+                
                 st.markdown(f"""
-                <div class="tip-card">
-                    <h4 style="color: #dc2626; margin-top: 0;">⚠️ Highest Impact Category</h4>
-                    <p style="margin: 0;"><strong>{highest_co2_cat}</strong></p>
-                    <p style="margin: 5px 0 0 0;">{highest_co2_val:.1f} kg CO₂</p>
+                <div class="tip-card" style="background-color: {insight_bg}; border-color: {insight_border};">
+                    <h4 style="color: {insight_text}; margin-top: 0;">⚠️ Highest Impact Category</h4>
+                    <p style="margin: 0; color: {insight_text};"><strong>{highest_co2_cat}</strong></p>
+                    <p style="margin: 5px 0 0 0; color: {insight_text};">{highest_co2_val:.1f} kg CO₂</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -1206,11 +1420,15 @@ with tab3:
                 most_frequent = df_filtered['type'].mode()[0] if not df_filtered.empty else "N/A"
                 frequency = len(df_filtered[df_filtered['type'] == most_frequent]) if most_frequent != "N/A" else 0
                 
+                freq_bg = '#1a3a5f' if high_contrast else '#dbeafe'
+                freq_border = '#FFFFFF' if high_contrast else '#3b82f6'
+                freq_text = '#FFFFFF' if high_contrast else '#2563eb'
+                
                 st.markdown(f"""
-                <div class="tip-card">
-                    <h4 style="color: #2563eb; margin-top: 0;">🔄 Most Frequent</h4>
-                    <p style="margin: 0;"><strong>{most_frequent}</strong></p>
-                    <p style="margin: 5px 0 0 0;">{frequency} purchases</p>
+                <div class="tip-card" style="background-color: {freq_bg}; border-color: {freq_border};">
+                    <h4 style="color: {freq_text}; margin-top: 0;">🔄 Most Frequent</h4>
+                    <p style="margin: 0; color: {freq_text};"><strong>{most_frequent}</strong></p>
+                    <p style="margin: 5px 0 0 0; color: {freq_text};">{frequency} purchases</p>
                 </div>
                 """, unsafe_allow_html=True)
         else:
@@ -1220,7 +1438,8 @@ with tab3:
 
 # ==================== FOOTER ====================
 st.markdown("---")
+footer_color = '#CCCCCC' if high_contrast else '#9ca3af'
 st.markdown(
-    "<p style='text-align: center; color: #9ca3af; font-size: 14px;'>ShopImpact 🍃 | Making conscious shopping easy and fun!</p>",
+    f"<p style='text-align: center; color: {footer_color}; font-size: 14px;'>ShopImpact 🍃 | Making conscious shopping easy and fun!</p>",
     unsafe_allow_html=True
 )

@@ -33,6 +33,7 @@ PRODUCT_MULTIPLIERS = {
     'Home Decor': 1.2,
     'Books (New)': 0.5,
     'Books (Used)': 0.05,
+    '500+': 1.0,
 }
 
 ETHICAL_ALTERNATIVES = {
@@ -46,19 +47,21 @@ ETHICAL_ALTERNATIVES = {
     'Home Decor': ['Upcycle old items', 'Thrift stores', 'Support local artisans'],
     'Books (New)': ['Library', 'Buy used', 'Digital books', 'Book swaps'],
     'Books (Used)': ['Perfect! Keep it up! 📚'],
+    '500+': ['Consider shopping second-hand', 'Research eco-friendly options', 'Support sustainable brands'],
 }
 
 POPULAR_BRANDS = {
-    'Fast Fashion': ['Zara', 'H&M', 'Forever 21', 'Shein', 'Uniqlo', 'Gap', 'Fashion Nova', 'Custom / Other'],
-    'Electronics': ['Apple', 'Samsung', 'Dell', 'HP', 'Sony', 'LG', 'Microsoft', 'Google', 'Custom / Other'],
-    'Local Groceries': ['Whole Foods', "Trader Joe's", 'Local Farm', 'Farmers Market', 'Co-op', 'Custom / Other'],
-    'Second-Hand Item': ['Goodwill', 'ThredUp', 'Vinted', 'Poshmark', 'eBay', 'Depop', 'Local Thrift', 'Custom / Other'],
-    'Restaurant Meal': ["McDonald's", 'Chipotle', 'Subway', 'Starbucks', 'Local Restaurant', 'Custom / Other'],
-    'Leather Goods': ['Coach', 'Michael Kors', 'Fossil', 'Gucci', 'Prada', 'Local Artisan', 'Custom / Other'],
-    'Cosmetics': ['Sephora', 'Ulta', 'MAC', 'Lush', 'The Body Shop', 'Custom / Other'],
-    'Home Decor': ['IKEA', 'Target', 'HomeGoods', 'West Elm', 'CB2', 'Local Store', 'Custom / Other'],
-    'Books (New)': ['Amazon', 'Barnes & Noble', 'Local Bookstore', 'Custom / Other'],
-    'Books (Used)': ['ThriftBooks', 'Better World Books', 'Local Used Bookstore', 'Library Sale', 'Custom / Other'],
+    'Fast Fashion': ['Zara', 'H&M', 'Forever 21', 'Shein', 'Uniqlo', 'Gap', 'Fashion Nova', '500+', 'Custom / Other'],
+    'Electronics': ['Apple', 'Samsung', 'Dell', 'HP', 'Sony', 'LG', 'Microsoft', 'Google', '500+', 'Custom / Other'],
+    'Local Groceries': ['Whole Foods', "Trader Joe's", 'Local Farm', 'Farmers Market', 'Co-op', '500+', 'Custom / Other'],
+    'Second-Hand Item': ['Goodwill', 'ThredUp', 'Vinted', 'Poshmark', 'eBay', 'Depop', 'Local Thrift', '500+', 'Custom / Other'],
+    'Restaurant Meal': ["McDonald's", 'Chipotle', 'Subway', 'Starbucks', 'Local Restaurant', '500+', 'Custom / Other'],
+    'Leather Goods': ['Coach', 'Michael Kors', 'Fossil', 'Gucci', 'Prada', 'Local Artisan', '500+', 'Custom / Other'],
+    'Cosmetics': ['Sephora', 'Ulta', 'MAC', 'Lush', 'The Body Shop', '500+', 'Custom / Other'],
+    'Home Decor': ['IKEA', 'Target', 'HomeGoods', 'West Elm', 'CB2', 'Local Store', '500+', 'Custom / Other'],
+    'Books (New)': ['Amazon', 'Barnes & Noble', 'Local Bookstore', '500+', 'Custom / Other'],
+    'Books (Used)': ['ThriftBooks', 'Better World Books', 'Local Used Bookstore', 'Library Sale', '500+', 'Custom / Other'],
+    '500+': ['500+', 'Custom / Other'],
 }
 
 TIPS_LIST = [
@@ -655,15 +658,18 @@ with tab1:
     col_main, col_sidebar = st.columns([2.5, 1])
     
     with col_main:
-        # Purchase Form
+        # Purchase Form with enhanced design
         st.markdown("### 🛍️ Log a Purchase")
+        st.markdown("*Track your shopping and see its environmental impact*")
+        st.markdown("")
         
         with st.form("purchase_form", clear_on_submit=True):
+            # Product Type and Brand in columns
             col1, col2 = st.columns(2)
             
             with col1:
                 product_type = st.selectbox(
-                    "Product Type",
+                    "📦 Product Type",
                     options=list(PRODUCT_MULTIPLIERS.keys()),
                     key="product_type",
                     help="Select the type of product you're purchasing"
@@ -672,15 +678,16 @@ with tab1:
             with col2:
                 brands_list = POPULAR_BRANDS.get(product_type, ['Custom / Other'])
                 selected_brand = st.selectbox(
-                    "Brand",
+                    "🏷️ Brand",
                     options=brands_list,
                     key="brand",
                     help="Select brand or choose 'Custom / Other'"
                 )
             
+            # Custom brand input (full width)
             if selected_brand == 'Custom / Other':
                 custom_brand = st.text_input(
-                    "Enter Custom Brand Name",
+                    "✏️ Enter Custom Brand Name",
                     placeholder="e.g., Nike, Apple, Local Farm...",
                     help="Enter the brand name"
                 )
@@ -688,30 +695,41 @@ with tab1:
             else:
                 final_brand = selected_brand
             
-            price = st.number_input(
-                "Price (₹)",
+            # Price slider with better display
+            st.markdown("**Price (₹)**")
+            price = st.slider(
+                "Slide to set price",
                 min_value=0,
-                step=1,
+                max_value=50000,
                 value=0,
+                step=100,
                 key="price",
-                help="Enter the price in Indian Rupees"
+                help="Slide to set the price in Indian Rupees",
+                label_visibility="collapsed"
             )
             
-            # Show estimated CO2
+            if price > 0:
+                st.markdown(f"<p style='text-align: center; font-size: 24px; color: #16a34a; font-weight: bold;'>₹{price:,}</p>", unsafe_allow_html=True)
+            
+            # Show estimated CO2 with enhanced visual feedback
+            st.markdown("")
             if price > 0:
                 estimated_co2 = calculate_co2(price, product_type)
                 
-                # Color code based on impact
+                # Color code based on impact with better styling
                 if product_type in ECO_FRIENDLY_CATEGORIES:
                     st.success(f"✨ **Estimated CO₂ Impact:** {estimated_co2:.1f} kg (Eco-friendly!)")
+                    st.markdown("<p style='text-align: center; font-size: 14px; color: #16a34a;'>🌱 Great choice for the planet!</p>", unsafe_allow_html=True)
                 elif estimated_co2 > 100:
                     st.warning(f"⚠️ **Estimated CO₂ Impact:** {estimated_co2:.1f} kg (High impact)")
+                    st.markdown("<p style='text-align: center; font-size: 14px; color: #ea580c;'>💡 Consider eco-friendly alternatives</p>", unsafe_allow_html=True)
                 else:
                     st.info(f"📊 **Estimated CO₂ Impact:** {estimated_co2:.1f} kg")
+            else:
+                st.info("🔍 Set a price to see the estimated CO₂ impact")
             
-            submit_col1, submit_col2 = st.columns([3, 1])
-            with submit_col2:
-                submit_button = st.form_submit_button("✅ Log Purchase", type="primary", use_container_width=True)
+            st.markdown("")
+            submit_button = st.form_submit_button("✅ Log Purchase", type="primary", use_container_width=True)
             
             if submit_button:
                 if price <= 0:
@@ -815,16 +833,17 @@ with tab1:
             total_spend = sum(p['price'] for p in filtered_purchases)
             avg_co2 = total_co2 / len(filtered_purchases) if filtered_purchases else 0
             
-            # Metrics
+            # Metrics with enhanced display
+            st.markdown("#### 📊 Summary Statistics")
             metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
             with metric_col1:
-                st.metric("Total Spend", f"₹{total_spend:,.0f}")
+                st.metric("💰 Total Spend", f"₹{total_spend:,.0f}")
             with metric_col2:
-                st.metric("Total CO₂", f"{total_co2:.1f} kg")
+                st.metric("🌍 Total CO₂", f"{total_co2:.1f} kg")
             with metric_col3:
-                st.metric("Purchases", len(filtered_purchases))
+                st.metric("🛍️ Purchases", len(filtered_purchases))
             with metric_col4:
-                st.metric("Avg CO₂/Item", f"{avg_co2:.1f} kg")
+                st.metric("📈 Avg CO₂/Item", f"{avg_co2:.1f} kg")
             
             st.markdown("---")
             
@@ -914,8 +933,11 @@ with tab1:
         all_badges = get_all_badges(st.session_state.purchases, monthly_stats)
         
         # Show badges
-        st.markdown("#### Your Badges")
+        st.markdown("#### 🏆 Your Achievements")
         if all_badges:
+            badge_count = len(all_badges)
+            st.markdown(f"<p style='text-align: center; color: #16a34a; font-weight: bold;'>Earned {badge_count} badge{'s' if badge_count != 1 else ''}!</p>", unsafe_allow_html=True)
+            
             for badge in all_badges[:5]:  # Show top 5
                 badge_bg = '#1a1a1a' if high_contrast else '#d1fae5'
                 badge_border = '#FFFFFF' if high_contrast else '#10b981'

@@ -1,6 +1,6 @@
 """
-ShopImpact - Modern UI Version
-A Glassmorphism-inspired eco-tracker with gamification.
+ShopImpact - Advanced Version 2.0
+Features: High Contrast Mode, Advanced Analytics, Custom Entries, Editable History.
 """
 
 import streamlit as st
@@ -15,49 +15,49 @@ from typing import Dict, List
 
 # ==================== PAGE CONFIGURATION ====================
 st.set_page_config(
-    page_title="ShopImpact",
-    page_icon="🍃",
+    page_title="ShopImpact Pro",
+    page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ==================== CONSTANTS ====================
-PRODUCT_TYPES = [
-    'Fast Fashion', 'T-Shirt', 'Jeans', 'Dress', 'Suit', 'Jacket', 'Sweater', 'Hoodie', 'Shorts', 
-    'Leggings', 'Activewear', 'Swimwear', 'Shoes', 'Sneakers', 'Boots', 'Handbag', 'Backpack',
-    'Smartphone', 'Laptop', 'Tablet', 'Headphones', 'Earbuds', 'Smartwatch', 'Gaming Console',
-    'Local Groceries', 'Organic Vegetables', 'Organic Fruits', 'Meat', 'Dairy Products', 'Coffee',
-    'Sofa', 'Chair', 'Dining Table', 'Bed Frame', 'Mattress', 'Rug', 'Lamp', 'Plant Pot',
-    'Skincare', 'Makeup', 'Perfume', 'Shampoo', 'Soap', 'Toothpaste',
-    'Books (New)', 'Books (Used)', 'Vinyl Record', 'Video Game',
-    'Yoga Mat', 'Dumbbells', 'Bicycle', 'Tent', 'Running Shoes',
-    'Second-Hand Item', 'Thrifted Clothing', 'Refurbished Tech', 'Vintage Furniture'
-]
+# ==================== EXPANDED DATABASE ====================
+PRODUCT_CATEGORIES = {
+    "Fashion": ['T-Shirt', 'Jeans', 'Dress', 'Suit', 'Jacket', 'Sweater', 'Hoodie', 'Sneakers', 'Boots', 'Handbag', 'Jewelry', 'Fast Fashion Item'],
+    "Tech": ['Smartphone', 'Laptop', 'Tablet', 'Headphones', 'Smartwatch', 'Gaming Console', 'Monitor', 'PC Components', 'Camera'],
+    "Home": ['Sofa', 'Chair', 'Table', 'Bed', 'Mattress', 'Rug', 'Lamp', 'Decor', 'Kitchen Appliance', 'Air Conditioner'],
+    "Groceries": ['Local Veggies', 'Imported Fruit', 'Meat (Beef)', 'Meat (Chicken)', 'Dairy', 'Processed Food', 'Coffee', 'Alcohol'],
+    "Transport": ['Flight (Domestic)', 'Flight (Intl)', 'Gasoline (Full Tank)', 'Uber/Taxi Ride', 'Train Ticket'],
+    "Wellness": ['Skincare', 'Makeup', 'Perfume', 'Supplement', 'Gym Equipment'],
+    "Eco-Friendly": ['Second-Hand Clothes', 'Refurbished Tech', 'Vintage Furniture', 'Local Farmers Market', 'Bamboo Products', 'Repair Service']
+}
+
+# Flatten list for dropdowns
+ALL_PRODUCTS = [item for sublist in PRODUCT_CATEGORIES.values() for item in sublist]
 
 ALL_BRANDS = [
-    'Zara', 'H&M', 'Shein', 'Uniqlo', 'Nike', 'Adidas', 'Patagonia', 'The North Face', 'Lululemon',
-    'Apple', 'Samsung', 'Sony', 'Dell', 'HP', 'Lenovo', 'Asus', 'Logitech',
-    'Whole Foods', 'Trader Joes', 'Local Farm', 'Farmers Market', 'Nestle', 'Coca-Cola', 'Starbucks',
-    'IKEA', 'West Elm', 'Pottery Barn', 'Target', 'Wayfair',
-    'Sephora', 'Ulta', 'The Ordinary', 'Glossier', 'Lush',
-    'Amazon', 'Barnes & Noble', 'ThriftBooks', 'Goodwill', 'Salvation Army', 'Local Thrift Store',
-    'Etsy', 'eBay', 'Depop', 'Poshmark', 'Back Market'
+    'Zara', 'H&M', 'Shein', 'Uniqlo', 'Gucci', 'Louis Vuitton', 
+    'Nike', 'Adidas', 'Patagonia', 'The North Face', 'Lululemon', 'Puma',
+    'Apple', 'Samsung', 'Sony', 'Dell', 'HP', 'Lenovo', 'Asus', 'Logitech', 'Razer',
+    'IKEA', 'West Elm', 'Pottery Barn', 'Target', 'Wayfair', 'Pepperfry',
+    'Nestle', 'Coca-Cola', 'Pepsi', 'Starbucks', 'Whole Foods', 'Trader Joes',
+    'Sephora', 'Ulta', 'Loreal', 'Estee Lauder', 'The Ordinary',
+    'Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Etsy', 'eBay'
 ]
 
 def get_product_multiplier(product_type: str) -> float:
-    """Simplified multiplier logic for demo purposes"""
-    if product_type in ['Fast Fashion', 'Meat', 'SUV', 'Plane Ticket']: return 3.5
-    if product_type in ['Electronics', 'Furniture', 'Leather']: return 2.5
-    if product_type in ['Dairy', 'Imported Food']: return 1.5
-    if product_type in ['Local Groceries', 'Organic', 'Public Transport']: return 0.3
-    if 'Second-Hand' in product_type or 'Used' in product_type or 'Thrift' in product_type: return 0.1
+    """Advanced logic for CO2 estimation"""
+    # High Impact
+    if product_type in ['Meat (Beef)', 'Flight (Intl)', 'SUV', 'Fast Fashion Item']: return 4.5
+    if product_type in ['Meat (Chicken)', 'Flight (Domestic)', 'Luxury Fashion']: return 3.0
+    # Medium Impact
+    if product_type in ['Smartphone', 'Laptop', 'Gaming Console', 'Imported Fruit']: return 2.5
+    if product_type in ['Jeans', 'Furniture', 'Dairy']: return 1.8
+    # Low Impact
+    if product_type in ['Local Veggies', 'Public Transport', 'Coffee']: return 0.5
+    # Positive/Very Low Impact
+    if product_type in ['Second-Hand Clothes', 'Refurbished Tech', 'Repair Service']: return 0.1
     return 1.0
-
-ECO_FRIENDLY_CATEGORIES = [
-    'Second-Hand Item', 'Local Groceries', 'Books (Used)', 'Thrifted Clothing',
-    'Used Electronics', 'Vintage Furniture', 'Organic Vegetables', 'Organic Fruits',
-    'Refurbished Phone', 'Refurbished Tech', 'Used Book', 'Upcycled Item'
-]
 
 TIPS_LIST = [
     '🌍 Buying second-hand reduces CO₂ by up to 80%!',
@@ -65,11 +65,13 @@ TIPS_LIST = [
     '♻️ Repairing items saves tons of emissions.',
     '🎒 BYO bag saves ~6kg of CO₂ per year.',
     '🌾 Plant-based meals = 50% less carbon impact.',
+    '💡 LED bulbs use 75% less energy.',
+    '🥩 Skipping meat one day a week saves huge CO₂.'
 ]
 
-DATA_FILE = Path("shopimpact_data.json")
+DATA_FILE = Path("shopimpact_data_v2.json")
 
-# ==================== DATA LOGIC ====================
+# ==================== DATA MANAGEMENT ====================
 @st.cache_data
 def load_data_cached() -> Dict:
     if DATA_FILE.exists():
@@ -85,313 +87,263 @@ def save_data(data: Dict) -> None:
 def get_default_data() -> Dict:
     return {
         'purchases': [],
-        'user_profile': {'name': '', 'monthlyBudget': 15000, 'co2Goal': 50, 'joinDate': datetime.now().strftime('%Y-%m-%d')},
+        'user_profile': {'name': 'Eco Hero', 'monthlyBudget': 20000, 'co2Goal': 50},
         'settings': {'highContrast': False}
     }
 
+# Initialize Session State
 if 'initialized' not in st.session_state:
     data = load_data_cached()
     st.session_state.purchases = data.get('purchases', [])
     st.session_state.user_profile = data.get('user_profile', get_default_data()['user_profile'])
-    st.session_state.settings = data.get('settings', {'highContrast': False})
-    st.session_state.show_success = False
-    st.session_state.success_message = ''
+    st.session_state.high_contrast = data.get('settings', {}).get('highContrast', False)
     st.session_state.initialized = True
 
-# ==================== GAMIFICATION LOGIC ====================
-def get_user_badges(purchases, user_profile):
-    total_purchases = len(purchases)
-    if total_purchases == 0: return []
-    
-    eco_count = sum(1 for p in purchases if p['type'] in ECO_FRIENDLY_CATEGORIES)
-    current_month = datetime.now().month
-    month_purchases = [p for p in purchases if datetime.strptime(p['date'], '%Y-%m-%d').month == current_month]
-    month_spend = sum(p['price'] for p in month_purchases)
+def toggle_contrast():
+    st.session_state.high_contrast = not st.session_state.high_contrast
+    # Save setting immediately
+    save_data({'purchases': st.session_state.purchases, 'user_profile': st.session_state.user_profile, 'settings': {'highContrast': st.session_state.high_contrast}})
 
-    badges = [
-        {"id": "starter", "name": "The Starter", "icon": "🌱", "desc": "Logged first purchase", "condition": total_purchases >= 1},
-        {"id": "eco_warrior", "name": "Eco Warrior", "icon": "🛡️", "desc": "Bought 5+ eco items", "condition": eco_count >= 5},
-        {"id": "thrift_master", "name": "Thrift Master", "icon": "🧥", "desc": "Bought 3+ used items", "condition": sum(1 for p in purchases if "Second-Hand" in p['type'] or "Used" in p['type'] or "Thrift" in p['type']) >= 3},
-        {"id": "budget_boss", "name": "Budget Boss", "icon": "🐖", "desc": "Under budget (min 5 items)", "condition": len(month_purchases) >= 5 and month_spend <= user_profile.get('monthlyBudget', 15000)},
-        {"id": "local_legend", "name": "Local Legend", "icon": "🏘️", "desc": "Bought 3 'Local' items", "condition": sum(1 for p in purchases if "Local" in p['type']) >= 3}
-    ]
-    for badge in badges: badge['earned'] = badge.pop('condition')
-    return badges
-
-def add_purchase(product_type, brand, price):
-    old_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
-    old_earned = {b['id'] for b in old_badges if b['earned']}
-
-    co2_impact = price * get_product_multiplier(product_type)
-    purchase = {'date': datetime.now().strftime('%Y-%m-%d'), 'type': product_type, 'brand': brand, 'price': float(price), 'co2_impact': float(co2_impact)}
-    st.session_state.purchases.append(purchase)
-    
-    save_data({'purchases': st.session_state.purchases, 'user_profile': st.session_state.user_profile, 'settings': st.session_state.settings})
-    
-    new_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
-    new_earned = {b['id'] for b in new_badges if b['earned']}
-    newly_unlocked = new_earned - old_earned
-
-    if newly_unlocked:
-        badge_name = next(b['name'] for b in new_badges if b['id'] == list(newly_unlocked)[0])
-        st.session_state.success_message = f"🏆 Badge Unlocked: {badge_name}!"
-        st.balloons()
-    elif product_type in ECO_FRIENDLY_CATEGORIES:
-        st.session_state.success_message = f"🌿 Excellent! Eco-friendly choice recorded."
-        st.snow()
+# ==================== DYNAMIC CSS THEME ====================
+def inject_css():
+    if st.session_state.high_contrast:
+        # HIGH CONTRAST MODE (Black/Yellow/Cyan)
+        st.markdown("""
+        <style>
+            .stApp { background-color: #000000; color: #FFFF00; }
+            h1, h2, h3, h4, p, label, .stMarkdown, .stMetricLabel { color: #FFFF00 !important; font-family: 'Courier New', monospace !important; }
+            [data-testid="stMetricValue"] { color: #00FFFF !important; }
+            .stCard, div[data-testid="stForm"], div[data-testid="stMetric"] {
+                background: #111111; border: 2px solid #FFFF00; border-radius: 0px; box-shadow: none;
+            }
+            .stTextInput > div > div > input, .stSelectbox > div > div > div {
+                background-color: #000000; color: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 0px;
+            }
+            div.stButton > button {
+                background-color: #000000; color: #00FFFF !important; border: 2px solid #00FFFF; border-radius: 0px; text-transform: uppercase;
+            }
+            div.stButton > button:hover { background-color: #00FFFF; color: #000000 !important; }
+            [data-testid="stSidebar"] { background-color: #1a1a1a; border-right: 3px solid #FFFF00; }
+            .stTabs [aria-selected="true"] { background-color: #FFFF00 !important; color: #000000 !important; border: 1px solid #FFFF00; }
+        </style>
+        """, unsafe_allow_html=True)
     else:
-        st.session_state.success_message = f"✅ Logged! {product_type} added."
-    st.session_state.show_success = True
+        # MODERN ECO MODE (Glassmorphism/Mint)
+        st.markdown("""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+            html, body, [class*="css"] { font-family: 'Poppins', sans-serif; color: #1e293b; }
+            .stApp { background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%); }
+            h1, h2, h3 { color: #0f766e !important; }
+            .stCard, div[data-testid="stForm"], div[data-testid="stMetric"] {
+                background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);
+                border-radius: 20px; border: 1px solid #ffffff; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            }
+            [data-testid="stMetricValue"] { color: #059669 !important; }
+            div.stButton > button {
+                background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 12px;
+            }
+            [data-testid="stSidebar"] { background-color: rgba(255,255,255,0.5); border-right: 1px solid #fff; }
+        </style>
+        """, unsafe_allow_html=True)
 
-# ==================== 🎨 HIGH-CONTRAST MODERN UI ====================
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-
-    /* Global Font */
-    html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
-        color: #1e293b;
-    }
-    
-    /* Background - Soft Mint Gradient */
-    .stApp {
-        background: linear-gradient(135deg, #d1fae5 0%, #ecfccb 100%);
-    }
-
-    /* HEADERS - Forced Dark Green for Visibility */
-    h1, h2, h3, [data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h3 {
-        color: #064e3b !important; /* Deep Forest Green */
-        font-weight: 700 !important;
-        text-shadow: none !important;
-    }
-    
-    /* SUBTITLES - Dark Grey */
-    p, .stMarkdown p {
-        color: #334155 !important;
-        font-size: 16px;
-    }
-
-    /* CARDS - Solid White for Readability */
-    .stCard, div[data-testid="stForm"], div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e2e8f0;
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #f8fafc;
-        border-right: 1px solid #e2e8f0;
-    }
-
-    /* INPUTS - High Contrast Borders */
-    .stTextInput > div > div > input, .stSelectbox > div > div > div {
-        background-color: #ffffff;
-        border: 2px solid #cbd5e1;
-        color: #0f172a;
-        border-radius: 10px;
-    }
-    .stTextInput > div > div > input:focus, .stSelectbox > div > div > div:focus {
-        border-color: #10b981;
-    }
-
-    /* BUTTONS - Solid Dark Green */
-    div.stButton > button {
-        background-color: #059669;
-        color: white !important;
-        border: none;
-        border-radius: 10px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    div.stButton > button:hover {
-        background-color: #047857;
-    }
-
-    /* METRICS - Darker Numbers */
-    [data-testid="stMetricValue"] {
-        color: #059669 !important;
-        font-weight: 700;
-        font-size: 28px !important;
-    }
-    [data-testid="stMetricLabel"] {
-        color: #64748b !important;
-    }
-
-    /* TABS */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255,255,255,0.6);
-        border-radius: 8px;
-        color: #475569;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #059669 !important;
-        color: white !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+inject_css()
 
 # ==================== MAIN UI ====================
 
-# --- Header Section ---
-col_logo, col_title = st.columns([1, 6])
-with col_logo:
-    st.markdown("<div style='font-size: 60px; text-align: right;'>🌿</div>", unsafe_allow_html=True)
-with col_title:
-    st.markdown("# ShopImpact")
-    st.markdown("### Your mindful companion for a greener planet.")
+# --- Sidebar ---
+with st.sidebar:
+    st.markdown("### ⚙️ Accessibility")
+    st.toggle("High Contrast Mode", value=st.session_state.high_contrast, on_change=toggle_contrast)
+    
+    st.markdown("---")
+    st.markdown("### 👤 User Profile")
+    st.write(f"**{st.session_state.user_profile['name']}**")
+    
+    # Progress towards next rank (Mock logic)
+    purchases_len = len(st.session_state.purchases)
+    rank = "Novice"
+    progress = 0
+    if purchases_len > 5: rank = "Conscious Buyer"; progress = 30
+    if purchases_len > 15: rank = "Sustainability Pro"; progress = 70
+    
+    st.caption(f"Rank: {rank}")
+    st.progress(progress)
+    
+    st.markdown("---")
+    st.info(random.choice(TIPS_LIST), icon="💡")
 
-st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True) # Spacer
+# --- Header ---
+c1, c2 = st.columns([5, 1])
+with c1:
+    st.title("ShopImpact Pro")
+    st.markdown("Advanced Tracking & Environmental Analytics")
+with c2:
+    st.metric("Budget", f"₹{st.session_state.user_profile['monthlyBudget']/1000}k")
 
-# --- Tabs ---
-tab1, tab2 = st.tabs(["📊 Dashboard & Logger", "👤 My Profile"])
+# --- TABS ---
+tab_input, tab_analytics, tab_history = st.tabs(["➕ Add Item", "📊 Advanced Analytics", "📝 History Editor"])
 
-with tab1:
-    col_main, col_sidebar = st.columns([2.2, 1])
-
-    # --- MAIN CONTENT ---
-    with col_main:
-        # 1. ADD PURCHASE CARD
-        st.markdown("#### 🛍️ Log New Item")
-        with st.form("purchase_form", clear_on_submit=True):
-            c1, c2 = st.columns(2)
-            with c1:
-                product_type = st.selectbox("Category", options=PRODUCT_TYPES)
-            with c2:
-                final_brand = st.selectbox("Brand", options=ALL_BRANDS)
+# ==================== TAB 1: INPUT ====================
+with tab_input:
+    col_form, col_preview = st.columns([1.5, 1])
+    
+    with col_form:
+        with st.form("advanced_input"):
+            st.markdown("#### Log Purchase")
             
-            price = st.slider("Price (₹)", 0, 50000, 1000, 100)
+            # Switch between list and custom
+            entry_mode = st.radio("Entry Mode", ["Select from List", "Custom Entry"], horizontal=True, label_visibility="collapsed")
             
-            # Live CO2 preview
-            est_co2 = price * get_product_multiplier(product_type)
-            st.caption(f"Estimated Impact: **{est_co2:.1f} kg CO₂**")
+            if entry_mode == "Select from List":
+                p_cat = st.selectbox("Category", list(PRODUCT_CATEGORIES.keys()))
+                p_type = st.selectbox("Product", PRODUCT_CATEGORIES[p_cat])
+                p_brand = st.selectbox("Brand", ALL_BRANDS)
+            else:
+                p_cat = "Custom"
+                p_type = st.text_input("Product Name (e.g. Vintage Lamp)")
+                p_brand = st.text_input("Brand Name")
             
-            submitted = st.form_submit_button("Add to Tracker")
+            price = st.number_input("Price (₹)", min_value=0, value=1500, step=100)
+            date_logged = st.date_input("Date", value=datetime.now())
+            
+            # Smart logic for custom items
+            multiplier = get_product_multiplier(p_type)
+            
+            submitted = st.form_submit_button("Log Impact", use_container_width=True)
+            
             if submitted:
-                add_purchase(product_type, final_brand, price)
-                st.rerun()
+                if not p_type:
+                    st.error("Please enter a product name.")
+                else:
+                    new_p = {
+                        "date": date_logged.strftime("%Y-%m-%d"),
+                        "category": p_cat,
+                        "type": p_type,
+                        "brand": p_brand if p_brand else "Unknown",
+                        "price": price,
+                        "co2": float(price * multiplier),
+                        "id": str(datetime.now().timestamp()) # Unique ID for editing
+                    }
+                    st.session_state.purchases.append(new_p)
+                    save_data({'purchases': st.session_state.purchases, 'user_profile': st.session_state.user_profile, 'settings': {'highContrast': st.session_state.high_contrast}})
+                    st.success("Item Logged Successfully!")
+                    st.rerun()
 
-        # Success Message Area
-        if st.session_state.show_success:
-            st.success(st.session_state.success_message)
-            st.session_state.show_success = False
-
-        st.markdown("<div style='height: 30px'></div>", unsafe_allow_html=True)
-
-        # 2. METRICS ROW
+    with col_preview:
         if st.session_state.purchases:
-            df = pd.DataFrame(st.session_state.purchases)
-            total_co2 = df['co2_impact'].sum()
-            total_spend = df['price'].sum()
-            
-            st.markdown("#### 📈 Overview")
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Total Spend", f"₹{total_spend:,.0f}", delta="Lifetime")
-            m2.metric("Carbon Footprint", f"{total_co2:.1f} kg", delta_color="inverse")
-            m3.metric("Items Logged", len(df))
-
-            # 3. CHARTS
-            st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
-            c_chart1, c_chart2 = st.columns(2)
-            
-            with c_chart1:
-                # Custom Eco-Themed Bar Chart
-                fig_bar = px.bar(
-                    df.groupby('type')['co2_impact'].sum().reset_index().nlargest(5, 'co2_impact'),
-                    x='type', y='co2_impact',
-                    title='High Impact Items',
-                    color='co2_impact',
-                    color_continuous_scale=['#a7f3d0', '#34d399', '#059669', '#064e3b'] # Custom Green Gradient
-                )
-                fig_bar.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)', 
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font={'family': 'Poppins'},
-                    coloraxis_showscale=False
-                )
-                st.plotly_chart(fig_bar, use_container_width=True)
-
-            with c_chart2:
-                # Donut Chart
-                fig_pie = px.pie(
-                    df.groupby('type')['price'].sum().reset_index().nlargest(5, 'price'),
-                    values='price', names='type',
-                    title='Spending Habits',
-                    color_discrete_sequence=px.colors.sequential.Tealgrn
-                )
-                fig_pie.update_traces(hole=.4, hoverinfo="label+percent+name")
-                fig_pie.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font={'family': 'Poppins'}
-                )
-                st.plotly_chart(fig_pie, use_container_width=True)
-                
-            # Recent History Table
-            st.markdown("#### 🧾 Recent Logs")
-            st.dataframe(
-                df[['date', 'type', 'brand', 'price', 'co2_impact']].tail(5).sort_values('date', ascending=False),
-                use_container_width=True,
-                hide_index=True
-            )
-
-    # --- SIDEBAR CONTENT ---
-    with col_sidebar:
-        # Profile Mini Card
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #059669, #34d399); padding: 15px; border-radius: 15px; color: white; margin-bottom: 20px;">
-            <div style="font-weight: 600; font-size: 14px;">CURRENT LEVEL</div>
-            <div style="font-weight: 700; font-size: 24px;">Eco Enthusiast</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("### 🏆 Badges")
-        my_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
+            last_item = st.session_state.purchases[-1]
+            st.info("Last Added:")
+            st.markdown(f"**{last_item['type']}** ({last_item['brand']})")
+            st.markdown(f"💸 ₹{last_item['price']}")
+            st.markdown(f"☁️ {last_item['co2']:.1f} kg CO₂")
         
-        if not my_badges:
-            st.info("Log items to unlock!")
-        else:
-            # Grid Layout for Badges
-            rows = [my_badges[i:i + 3] for i in range(0, len(my_badges), 3)]
-            for row in rows:
-                cols = st.columns(3)
-                for idx, badge in enumerate(row):
-                    with cols[idx]:
-                        if badge['earned']:
-                            # UNLOCKED: White card with green border
-                            st.markdown(f"""
-                            <div style="text-align: center; background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid #86efac;" title="{badge['name']}">
-                                <div style="font-size: 24px;">{badge['icon']}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            # LOCKED: Grey card (so you can see it exists)
-                            st.markdown(f"""
-                            <div style="text-align: center; background: #e2e8f0; border-radius: 12px; padding: 12px; opacity: 0.7;" title="Locked: {badge['desc']}">
-                                <div style="font-size: 24px; filter: grayscale(1);">🔒</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+        # Gamification Badges (Simplified for cleaner UI)
+        st.markdown("#### Recent Achievements")
+        eco_count = sum(1 for p in st.session_state.purchases if p['category'] == 'Eco-Friendly')
+        if eco_count >= 1: st.markdown("🌱 **First Step:** Bought an eco item")
+        if len(st.session_state.purchases) >= 5: st.markdown("🔥 **Tracker:** Logged 5+ items")
 
+# ==================== TAB 2: ANALYTICS ====================
+with tab_analytics:
+    if not st.session_state.purchases:
+        st.warning("No data yet. Log some items in the first tab!")
+    else:
+        df = pd.DataFrame(st.session_state.purchases)
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # 1. TOP ROW METRICS
+        m1, m2, m3, m4 = st.columns(4)
+        total_spend = df['price'].sum()
+        total_co2 = df['co2'].sum()
+        current_month_spend = df[df['date'].dt.month == datetime.now().month]['price'].sum()
+        
+        m1.metric("Total Spent", f"₹{total_spend:,.0f}")
+        m2.metric("Total CO₂ Impact", f"{total_co2:,.1f} kg")
+        m3.metric("This Month", f"₹{current_month_spend:,.0f}")
+        m4.metric("Avg. Item Cost", f"₹{df['price'].mean():,.0f}")
+        
         st.markdown("---")
-        st.markdown("### 💡 Daily Tip")
-        st.info(random.choice(TIPS_LIST), icon="🌱")
-        
-        # Clear Data Option
-        with st.expander("⚙️ Settings"):
-            if st.button("Reset Data", type="secondary"):
-                st.session_state.purchases = []
-                save_data({'purchases': [], 'user_profile': st.session_state.user_profile, 'settings': {}})
-                st.rerun()
 
-with tab2:
-    st.markdown("### Edit Profile")
-    st.caption("Adjust your goals and budget here.")
-    with st.form("prof_form"):
-        st.text_input("Name", value=st.session_state.user_profile.get('name', ''))
-        st.number_input("Budget", value=15000)
-        st.form_submit_button("Save Changes")
+        # 2. ADVANCED CHARTS
+        c1, c2 = st.columns([1, 1])
+        
+        with c1:
+            st.markdown("#### 🌗 Impact Breakdown (Sunburst)")
+            # Sunburst Chart: Category -> Brand -> Impact
+            fig_sun = px.sunburst(
+                df, 
+                path=['category', 'type'], 
+                values='co2',
+                color='co2',
+                color_continuous_scale='RdYlGn_r' # Red is bad (high CO2), Green is good
+            )
+            fig_sun.update_layout(margin=dict(t=0, l=0, r=0, b=0), paper_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_sun, use_container_width=True)
+
+        with c2:
+            st.markdown("#### 🐖 Monthly Budget Meter")
+            budget = st.session_state.user_profile['monthlyBudget']
+            # Gauge Chart
+            fig_gauge = go.Figure(go.Indicator(
+                mode = "gauge+number+delta",
+                value = current_month_spend,
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                title = {'text': "Monthly Limit"},
+                delta = {'reference': budget, 'increasing': {'color': "red"}},
+                gauge = {
+                    'axis': {'range': [None, budget * 1.5]},
+                    'bar': {'color': "#059669" if not st.session_state.high_contrast else "#FFFF00"},
+                    'steps': [
+                        {'range': [0, budget], 'color': "rgba(0, 255, 0, 0.1)"},
+                        {'range': [budget, budget*1.5], 'color': "rgba(255, 0, 0, 0.1)"}],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': budget}}))
+            fig_gauge.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white" if st.session_state.high_contrast else "#1e293b"})
+            st.plotly_chart(fig_gauge, use_container_width=True)
+
+        # 3. TREND LINE
+        st.markdown("#### 📈 Spending & Impact Trend")
+        # Group by date
+        daily_df = df.groupby('date')[['price', 'co2']].sum().reset_index().sort_values('date')
+        fig_line = px.line(daily_df, x='date', y=['price', 'co2'], markers=True)
+        fig_line.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', hovermode="x unified")
+        st.plotly_chart(fig_line, use_container_width=True)
+
+# ==================== TAB 3: HISTORY EDITOR ====================
+with tab_history:
+    st.markdown("### 📝 Manage Records")
+    st.caption("Double click any cell to edit details. Use the checkbox to delete rows.")
+    
+    if st.session_state.purchases:
+        df_edit = pd.DataFrame(st.session_state.purchases)
+        
+        # Use Data Editor for interactivity
+        edited_df = st.data_editor(
+            df_edit,
+            num_rows="dynamic",
+            column_config={
+                "price": st.column_config.NumberColumn("Price (₹)", format="₹%d"),
+                "co2": st.column_config.NumberColumn("CO₂ (kg)", format="%.1f kg"),
+                "date": st.column_config.DateColumn("Date"),
+                "id": None # Hide ID column
+            },
+            use_container_width=True
+        )
+        
+        if st.button("💾 Save Changes"):
+            # Convert back to list of dicts
+            updated_data = edited_df.to_dict('records')
+            # Fix date formatting (Data editor converts to datetime objects)
+            for item in updated_data:
+                if isinstance(item['date'], (datetime, pd.Timestamp)):
+                    item['date'] = item['date'].strftime("%Y-%m-%d")
+            
+            st.session_state.purchases = updated_data
+            save_data({'purchases': st.session_state.purchases, 'user_profile': st.session_state.user_profile, 'settings': {'highContrast': st.session_state.high_contrast}})
+            st.success("Database updated!")
+            st.rerun()
+    else:
+        st.info("No records to edit.")

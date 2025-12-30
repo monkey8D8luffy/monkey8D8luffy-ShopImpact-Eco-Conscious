@@ -375,7 +375,7 @@ TIPS_LIST = [
     '🌍 Buying second-hand reduces CO₂ by up to 80% compared to new items!',
     '🌱 Local produce has 5x less carbon footprint than imported goods.',
     '♻️ Repairing items instead of replacing them can save tons of emissions.',
-    '🚶‍♀️ Walking or biking to the store? You\\'re already making an impact!',
+    " 🚶 Walking or biking to the store? You're already making an impact!",
     '🎒 Bringing your own bag saves about 6kg of CO₂ per year.',
     '💚 Every conscious choice counts - you\\'re doing great!',
     '🌾 Plant-based meals typically have 50% less carbon impact.',

@@ -151,109 +151,96 @@ def add_purchase(product_type, brand, price):
         st.session_state.success_message = f"✅ Logged! {product_type} added."
     st.session_state.show_success = True
 
-# ==================== 🎨 MODERN UI STYLING ====================
+# ==================== 🎨 HIGH-CONTRAST MODERN UI ====================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-    /* Global Styles */
+    /* Global Font */
     html, body, [class*="css"] {
         font-family: 'Poppins', sans-serif;
+        color: #1e293b;
     }
     
-    /* Animated Gradient Background */
+    /* Background - Soft Mint Gradient */
     .stApp {
-        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-        background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
-        background-color: #f0fdf4; /* Fallback */
-        background-image: radial-gradient(at 0% 0%, hsla(152,100%,90%,1) 0, transparent 50%), 
-                          radial-gradient(at 50% 0%, hsla(128,100%,92%,1) 0, transparent 50%), 
-                          radial-gradient(at 100% 0%, hsla(152,100%,89%,1) 0, transparent 50%);
+        background: linear-gradient(135deg, #d1fae5 0%, #ecfccb 100%);
     }
 
-    /* Glassmorphism Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(12px);
-        border-right: 1px solid rgba(255, 255, 255, 0.4);
+    /* HEADERS - Forced Dark Green for Visibility */
+    h1, h2, h3, [data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h3 {
+        color: #064e3b !important; /* Deep Forest Green */
+        font-weight: 700 !important;
+        text-shadow: none !important;
+    }
+    
+    /* SUBTITLES - Dark Grey */
+    p, .stMarkdown p {
+        color: #334155 !important;
+        font-size: 16px;
     }
 
-    /* Card Styling */
+    /* CARDS - Solid White for Readability */
     .stCard, div[data-testid="stForm"], div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        transition: transform 0.2s ease;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
     }
     
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #f8fafc;
+        border-right: 1px solid #e2e8f0;
     }
 
-    /* Inputs */
+    /* INPUTS - High Contrast Borders */
     .stTextInput > div > div > input, .stSelectbox > div > div > div {
-        border-radius: 12px;
-        border: 1px solid #e0e0e0;
-        background-color: rgba(255, 255, 255, 0.9);
+        background-color: #ffffff;
+        border: 2px solid #cbd5e1;
+        color: #0f172a;
+        border-radius: 10px;
+    }
+    .stTextInput > div > div > input:focus, .stSelectbox > div > div > div:focus {
+        border-color: #10b981;
     }
 
-    /* Primary Button */
+    /* BUTTONS - Solid Dark Green */
     div.stButton > button {
-        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 0.6rem 1.2rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
-        width: 100%;
-    }
-
-    div.stButton > button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.5);
+        background-color: #059669;
         color: white !important;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    div.stButton > button:hover {
+        background-color: #047857;
     }
 
-    /* Metrics Values */
+    /* METRICS - Darker Numbers */
     [data-testid="stMetricValue"] {
-        font-size: 2rem !important;
-        background: -webkit-linear-gradient(#059669, #34d399);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #059669 !important;
         font-weight: 700;
+        font-size: 28px !important;
     }
-    
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: transparent;
+    [data-testid="stMetricLabel"] {
+        color: #64748b !important;
     }
+
+    /* TABS */
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: rgba(255,255,255,0.5);
-        border-radius: 12px;
-        border: none;
+        background-color: rgba(255,255,255,0.6);
+        border-radius: 8px;
+        color: #475569;
         font-weight: 600;
-        color: #64748b;
     }
     .stTabs [aria-selected="true"] {
-        background-color: white !important;
-        color: #059669 !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    /* Headers */
-    h1, h2, h3 {
-        color: #1e293b;
-        font-weight: 700;
-        letter-spacing: -0.5px;
+        background-color: #059669 !important;
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -376,7 +363,7 @@ with tab1:
         
         if not my_badges:
             st.info("Log items to unlock!")
-        else:
+          else:
             # Grid Layout for Badges
             rows = [my_badges[i:i + 3] for i in range(0, len(my_badges), 3)]
             for row in rows:
@@ -384,11 +371,22 @@ with tab1:
                 for idx, badge in enumerate(row):
                     with cols[idx]:
                         if badge['earned']:
+                            # UNLOCKED: White card with green border
                             st.markdown(f"""
-                            <div style="text-align: center; background: rgba(255,255,255,0.8); border-radius: 10px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" title="{badge['name']}">
+                            <div style="text-align: center; background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid #86efac;" title="{badge['name']}">
                                 <div style="font-size: 24px;">{badge['icon']}</div>
                             </div>
                             """, unsafe_allow_html=True)
+                        else:
+                            # LOCKED: Grey card (so you can see it exists)
+                            st.markdown(f"""
+                            <div style="text-align: center; background: #e2e8f0; border-radius: 12px; padding: 12px; opacity: 0.7;" title="Locked: {badge['desc']}">
+                                <div style="font-size: 24px; filter: grayscale(1);">🔒</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                            <div style="text-align: center; background: rgba(255,255,255,0.3); ...
                         else:
                             st.markdown(f"""
                             <div style="text-align: center; background: rgba(255,255,255,0.3); border-radius: 10px; padding: 10px; opacity: 0.5; filter: grayscale(1);" title="Locked: {badge['desc']}">

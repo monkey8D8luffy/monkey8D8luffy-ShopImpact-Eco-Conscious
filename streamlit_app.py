@@ -21,8 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==================== CONSTANTS (Simplified for Code Length) ====================
-# Note: I am keeping your lists, but normally you would move these to a separate file.
+# ==================== CONSTANTS ====================
 PRODUCT_TYPES = [
     'Fast Fashion', 'T-Shirt', 'Jeans', 'Dress', 'Suit', 'Jacket', 'Sweater', 'Hoodie', 'Shorts', 
     'Leggings', 'Activewear', 'Swimwear', 'Shoes', 'Sneakers', 'Boots', 'Handbag', 'Backpack',
@@ -66,13 +65,6 @@ TIPS_LIST = [
     '♻️ Repairing items saves tons of emissions.',
     '🎒 BYO bag saves ~6kg of CO₂ per year.',
     '🌾 Plant-based meals = 50% less carbon impact.',
-]
-
-MOTIVATIONAL_QUOTES = [
-    "Small changes, big impact! 🌍",
-    "Be the change you wish to see.",
-    "Conscious choices create a better tomorrow.",
-    "Sustainability is a responsibility.",
 ]
 
 DATA_FILE = Path("shopimpact_data.json")
@@ -363,7 +355,7 @@ with tab1:
         
         if not my_badges:
             st.info("Log items to unlock!")
-          else:
+        else:
             # Grid Layout for Badges
             rows = [my_badges[i:i + 3] for i in range(0, len(my_badges), 3)]
             for row in rows:
@@ -384,15 +376,6 @@ with tab1:
                                 <div style="font-size: 24px; filter: grayscale(1);">🔒</div>
                             </div>
                             """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                            <div style="text-align: center; background: rgba(255,255,255,0.3); ...
-                        else:
-                            st.markdown(f"""
-                            <div style="text-align: center; background: rgba(255,255,255,0.3); border-radius: 10px; padding: 10px; opacity: 0.5; filter: grayscale(1);" title="Locked: {badge['desc']}">
-                                <div style="font-size: 24px;">{badge['icon']}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
 
         st.markdown("---")
         st.markdown("### 💡 Daily Tip")
@@ -408,7 +391,6 @@ with tab1:
 with tab2:
     st.markdown("### Edit Profile")
     st.caption("Adjust your goals and budget here.")
-    # (Simplified profile form for visuals)
     with st.form("prof_form"):
         st.text_input("Name", value=st.session_state.user_profile.get('name', ''))
         st.number_input("Budget", value=15000)

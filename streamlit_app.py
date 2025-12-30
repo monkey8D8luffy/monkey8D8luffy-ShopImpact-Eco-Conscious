@@ -193,27 +193,6 @@ ALL_BRANDS = [
     'Amazon', 'Barnes & Noble', 'Books-A-Million', 'Half Price Books', "Powell's Books", 'Strand',
     'The Ripped Bodice', 'McNally Jackson', 'City Lights', 'Shakespeare and Company', 'Waterstones',
     'Foyles', "Blackwell's", 'Book Depository', 'Better World Books', 'ThriftBooks', 'AbeBooks',
-    'Audible', 'Scribd', 'Kindle', 'Kobo', 'Nook', 'Apple Books', 'Google Play Books', 'OverDrive',
-    'Penguin Random House', 'HarperCollins', 'Simon & Schuster', 'Macmillan', 'Hachette',
-    
-    # Sports & Outdoor Brands (40)
-    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance', 'Asics', 'Brooks', 'Saucony',
-    'Hoka One One', 'On Running', 'Altra', 'Mizuno', 'Salomon', 'Merrell', 'Keen', 'Vasque', 'Oboz',
-    'The North Face', 'Patagonia', "Arc'teryx", 'Columbia', 'Marmot', 'Mountain Hardwear', 'Outdoor Research',
-    'Black Diamond', 'Petzl', 'MSR', 'Big Agnes', 'Nemo', 'REI', "Cabela's", 'Bass Pro Shops', "Dick's",
-    'Academy Sports', 'Decathlon', 'Lululemon', 'Athleta', 'Alo Yoga', 'Manduka', 'Jade Yoga', 'Liforme',
-    
-    # Automotive Brands (30)
-    'AutoZone', "O'Reilly", 'Advance Auto Parts', 'NAPA', 'Pep Boys', 'Firestone', 'Goodyear', 'Michelin',
-    'Bridgestone', 'Continental', 'Pirelli', 'Yokohama', 'Bosch', 'Denso', 'NGK', 'ACDelco', 'Mobil 1',
-    'Castrol', 'Valvoline', 'Pennzoil', 'Shell', 'BP', 'Chevron', '3M', 'Armor All', "Meguiar's",
-    'Chemical Guys', 'Turtle Wax', 'Rain-X', 'WeatherTech',
-    
-    # Additional Brands (100)
-    'Costco Kirkland', 'Amazon Basics', 'Great Value', '365 Everyday Value', 'Simple Truth', 'Market Pantry',
-    'Good & Gather', 'Up & Up', 'Equate', "Member's Mark", 'Private Selection', 'Signature Select',
-    'Local Farm', 'Farmers Market', 'Local Thrift', 'Goodwill', 'Salvation Army', 'ThredUp', 'Poshmark',
-    'Depop', 'Vinted', 'Mercari', 'OfferUp', 'Letgo', 'Facebook Marketplace', 'Craigslist', 'eBay',
     'Etsy', 'Redbubble', 'Society6', 'Printful', 'Printify', 'Zazzle', 'CafePress', 'Spreadshirt',
     'Local Restaurant', 'Local Cafe', 'Local Bakery', 'Local Boutique', 'Local Shop', 'Co-op',
     'Small Business', 'Independent Store', 'Family Owned', 'Artisan', 'Handmade', 'Custom Made',
@@ -449,7 +428,12 @@ if 'initialized' not in st.session_state:
 
 # ==================== HELPER FUNCTIONS ====================
 def add_purchase(product_type: str, brand: str, price: float) -> None:
-    """Add a new purchase"""
+    """Add a new purchase with badge tracking"""
+    # 1. Check badges BEFORE adding
+    old_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
+    old_earned = {b['id'] for b in old_badges if b['earned']}
+
+    # 2. Create and add purchase
     co2_impact = price * get_product_multiplier(product_type)
     purchase = {
         'date': datetime.now().strftime('%Y-%m-%d'),
@@ -459,18 +443,92 @@ def add_purchase(product_type: str, brand: str, price: float) -> None:
         'co2_impact': float(co2_impact)
     }
     st.session_state.purchases.append(purchase)
+    
     save_data({
         'purchases': st.session_state.purchases,
         'user_profile': st.session_state.user_profile,
         'settings': st.session_state.settings
     })
     
-    if product_type in ECO_FRIENDLY_CATEGORIES:
+    # 3. Check badges AFTER adding
+    new_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
+    new_earned = {b['id'] for b in new_badges if b['earned']}
+    newly_unlocked = new_earned - old_earned
+
+    # 4. Success Messages
+    if newly_unlocked:
+        badge_name = next(b['name'] for b in new_badges if b['id'] == list(newly_unlocked)[0])
+        st.session_state.success_message = f"🎉 Badge Unlocked: {badge_name}!"
+        st.balloons()
+    elif product_type in ECO_FRIENDLY_CATEGORIES:
         st.session_state.success_message = f"🌟 Eco-friendly choice! You're making a difference!"
         st.balloons()
     else:
         st.session_state.success_message = f"✅ Logged! Your {product_type} added {co2_impact:.1f} kg of CO₂."
+    
     st.session_state.show_success = True
+
+def get_user_badges(purchases, user_profile):
+    """Analyzes purchase history and returns a list of earned badges."""
+    # 1. Calculate Stats
+    total_purchases = len(purchases)
+    if total_purchases == 0:
+        return []
+
+    eco_count = sum(1 for p in purchases if p['type'] in ECO_FRIENDLY_CATEGORIES)
+    total_spend = sum(p['price'] for p in purchases)
+    
+    # Calculate current month stats
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    
+    month_purchases = [
+        p for p in purchases 
+        if datetime.strptime(p['date'], '%Y-%m-%d').month == current_month
+        and datetime.strptime(p['date'], '%Y-%m-%d').year == current_year
+    ]
+    month_spend = sum(p['price'] for p in month_purchases)
+    month_co2 = sum(p['co2_impact'] for p in month_purchases)
+
+    # 2. Define Badges
+    badges = [
+        {
+            "id": "starter", "name": "The Starter", "icon": "🌱",
+            "desc": "Logged your first purchase.",
+            "condition": total_purchases >= 1
+        },
+        {
+            "id": "eco_warrior", "name": "Eco Warrior", "icon": "🛡️",
+            "desc": "Bought 5+ eco-friendly items.",
+            "condition": eco_count >= 5
+        },
+        {
+            "id": "thrift_master", "name": "Thrift Master", "icon": "🧥",
+            "desc": "Bought 3+ second-hand items.",
+            "condition": sum(1 for p in purchases if "Second-Hand" in p['type'] or "Used" in p['type'] or "Thrift" in p['type']) >= 3
+        },
+        {
+            "id": "budget_boss", "name": "Budget Boss", "icon": "🐖",
+            "desc": "Stayed under budget this month (min 5 purchases).",
+            "condition": len(month_purchases) >= 5 and month_spend <= user_profile.get('monthlyBudget', 15000)
+        },
+        {
+            "id": "carbon_cutter", "name": "Carbon Cutter", "icon": "☁️",
+            "desc": "Kept monthly CO₂ under goal (min 5 purchases).",
+            "condition": len(month_purchases) >= 5 and month_co2 <= user_profile.get('co2Goal', 50)
+        },
+        {
+            "id": "local_legend", "name": "Local Legend", "icon": "🏘️",
+            "desc": "Supported local business (bought 3 'Local' items).",
+            "condition": sum(1 for p in purchases if "Local" in p['type']) >= 3
+        }
+    ]
+
+    # 3. Mark earned
+    for badge in badges:
+        badge['earned'] = badge.pop('condition')
+        
+    return badges
 
 # ==================== CUSTOM CSS ====================
 st.markdown("""
@@ -677,16 +735,28 @@ with tab1:
             st.info("📝 No purchases logged yet. Start tracking your impact!")
     
     with col_sidebar:
-        st.markdown("### 🎯 Quick Stats")
+        st.markdown("### 🏆 Your Badges")
         
-        if st.session_state.purchases:
-            eco_count = sum(1 for p in st.session_state.purchases if p['type'] in ECO_FRIENDLY_CATEGORIES)
-            eco_pct = (eco_count / len(st.session_state.purchases)) * 100 if st.session_state.purchases else 0
-            
-            st.metric("🌱 Eco Purchases", f"{eco_pct:.0f}%")
-            st.progress(eco_pct / 100)
+        # Calculate Badges
+        my_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
+        earned_count = sum(1 for b in my_badges if b['earned'])
         
+        if not my_badges:
+             st.info("Start logging to unlock badges!")
+        else:
+            st.caption(f"Unlocked: {earned_count}/{len(my_badges)}")
+            rows = [my_badges[i:i + 3] for i in range(0, len(my_badges), 3)]
+            for row in rows:
+                cols = st.columns(3)
+                for idx, badge in enumerate(row):
+                    with cols[idx]:
+                        if badge['earned']:
+                            st.markdown(f"<div style='text-align:center;cursor:help;' title='{badge['name']}'><div style='font-size:30px;'>{badge['icon']}</div></div>", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"<div style='text-align:center;opacity:0.3;filter:grayscale(100%);cursor:help;' title='LOCKED: {badge['desc']}'><div style='font-size:30px;'>{badge['icon']}</div></div>", unsafe_allow_html=True)
+
         st.markdown("---")
+        # Keep your existing Tip section below this line
         st.markdown("### 💡 Eco Tip")
         st.info(random.choice(TIPS_LIST))
         

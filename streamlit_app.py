@@ -193,6 +193,27 @@ ALL_BRANDS = [
     'Amazon', 'Barnes & Noble', 'Books-A-Million', 'Half Price Books', "Powell's Books", 'Strand',
     'The Ripped Bodice', 'McNally Jackson', 'City Lights', 'Shakespeare and Company', 'Waterstones',
     'Foyles', "Blackwell's", 'Book Depository', 'Better World Books', 'ThriftBooks', 'AbeBooks',
+    'Audible', 'Scribd', 'Kindle', 'Kobo', 'Nook', 'Apple Books', 'Google Play Books', 'OverDrive',
+    'Penguin Random House', 'HarperCollins', 'Simon & Schuster', 'Macmillan', 'Hachette',
+    
+    # Sports & Outdoor Brands (40)
+    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance', 'Asics', 'Brooks', 'Saucony',
+    'Hoka One One', 'On Running', 'Altra', 'Mizuno', 'Salomon', 'Merrell', 'Keen', 'Vasque', 'Oboz',
+    'The North Face', 'Patagonia', "Arc'teryx", 'Columbia', 'Marmot', 'Mountain Hardwear', 'Outdoor Research',
+    'Black Diamond', 'Petzl', 'MSR', 'Big Agnes', 'Nemo', 'REI', "Cabela's", 'Bass Pro Shops', "Dick's",
+    'Academy Sports', 'Decathlon', 'Lululemon', 'Athleta', 'Alo Yoga', 'Manduka', 'Jade Yoga', 'Liforme',
+    
+    # Automotive Brands (30)
+    'AutoZone', "O'Reilly", 'Advance Auto Parts', 'NAPA', 'Pep Boys', 'Firestone', 'Goodyear', 'Michelin',
+    'Bridgestone', 'Continental', 'Pirelli', 'Yokohama', 'Bosch', 'Denso', 'NGK', 'ACDelco', 'Mobil 1',
+    'Castrol', 'Valvoline', 'Pennzoil', 'Shell', 'BP', 'Chevron', '3M', 'Armor All', "Meguiar's",
+    'Chemical Guys', 'Turtle Wax', 'Rain-X', 'WeatherTech',
+    
+    # Additional Brands (100)
+    'Costco Kirkland', 'Amazon Basics', 'Great Value', '365 Everyday Value', 'Simple Truth', 'Market Pantry',
+    'Good & Gather', 'Up & Up', 'Equate', "Member's Mark", 'Private Selection', 'Signature Select',
+    'Local Farm', 'Farmers Market', 'Local Thrift', 'Goodwill', 'Salvation Army', 'ThredUp', 'Poshmark',
+    'Depop', 'Vinted', 'Mercari', 'OfferUp', 'Letgo', 'Facebook Marketplace', 'Craigslist', 'eBay',
     'Etsy', 'Redbubble', 'Society6', 'Printful', 'Printify', 'Zazzle', 'CafePress', 'Spreadshirt',
     'Local Restaurant', 'Local Cafe', 'Local Bakery', 'Local Boutique', 'Local Shop', 'Co-op',
     'Small Business', 'Independent Store', 'Family Owned', 'Artisan', 'Handmade', 'Custom Made',
@@ -239,23 +260,4 @@ def get_product_multiplier(product_type: str) -> float:
         'Robot Vacuum': 2.0, 'Electric Toothbrush': 0.5, 'Hair Dryer': 0.8, 'Electric Shaver': 0.6,
         'Printer': 1.5, 'Scanner': 1.2, 'Ink Cartridge': 0.4, 'Bluetooth Adapter': 0.2,
         'Wi-Fi Extender': 0.5, 'Portable SSD': 0.6, 'NAS Drive': 1.8, 'USB Hub': 0.3,
-        'Card Reader': 0.2, 'Laptop Bag': 1.0, 'Phone Gimbal': 1.2,
-        
-        # Food & Groceries
-        'Local Groceries': 0.3, 'Organic Vegetables': 0.2, 'Organic Fruits': 0.25, 'Fresh Produce': 0.3,
-        'Meat': 1.5, 'Poultry': 0.9, 'Seafood': 1.2, 'Dairy Products': 0.6, 'Milk': 0.5, 'Cheese': 0.8,
-        'Yogurt': 0.5, 'Butter': 0.7, 'Eggs': 0.4, 'Bread': 0.3, 'Pasta': 0.2, 'Rice': 0.2, 'Cereal': 0.4,
-        'Oats': 0.2, 'Granola': 0.3, 'Snacks': 0.5, 'Chips': 0.6, 'Cookies': 0.5, 'Chocolate': 0.8,
-        'Candy': 0.5, 'Ice Cream': 0.7, 'Frozen Pizza': 0.6, 'Frozen Vegetables': 0.3, 'Frozen Meals': 0.7,
-        'Canned Goods': 0.4, 'Soup': 0.4, 'Sauce': 0.3, 'Condiments': 0.3, 'Spices': 0.2, 'Herbs': 0.1,
-        'Oil': 0.4, 'Vinegar': 0.2, 'Honey': 0.3, 'Jam': 0.3, 'Peanut Butter': 0.4, 'Nuts': 0.5,
-        'Dried Fruits': 0.4, 'Coffee': 0.6, 'Tea': 0.2, 'Juice': 0.4, 'Soda': 0.5, 'Energy Drink': 0.6,
-        'Protein Shake': 0.5, 'Protein Bar': 0.4, 'Vitamins': 0.3, 'Supplements': 0.4, 'Baby Food': 0.4,
-        'Pet Food': 0.5, 'Dog Food': 0.6, 'Cat Food': 0.5, 'Treats': 0.3, 'Water Bottles': 0.4,
-        'Sparkling Water': 0.4, 'Kombucha': 0.5, 'Plant-based Milk': 0.3, 'Vegan Cheese': 0.4,
-        'Tofu': 0.2, 'Tempeh': 0.3, 'Quinoa': 0.3, 'Chia Seeds': 0.2, 'Protein Powder': 0.5,
-        'Meal Kit': 0.8, 'Ready-to-Eat Meal': 0.7, 'Salad Kit': 0.4, 'Smoothie Mix': 0.4, 'Baking Mix': 0.3,
-        
-        # Home & Furniture
-        'Home Decor': 1.2, 'Sofa': 4.0, 'Couch': 4.2, 'Chair': 2.0, 'Dining Table': 3.5, 'Coffee Table': 2.5,
-        'Desk': 3.0, 'Bed Frame': 3.5, 'Mattress': 3.0, 'Pillow': 0.8, 'Bedding': 1.2, 'Sheet
+        'Card Reader': 0.2, 'Laptop Bag': 1.0, 'Phone Gimbal': 

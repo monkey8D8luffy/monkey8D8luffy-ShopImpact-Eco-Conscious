@@ -1,6 +1,6 @@
 """
-ShopImpact - Streamlit Version (Fully Optimized with 500+ Products & Brands)
-A colorful, interactive, and friendly web app to help users become mindful, eco-conscious shoppers.
+ShopImpact - Modern UI Version
+A Glassmorphism-inspired eco-tracker with gamification.
 """
 
 import streamlit as st
@@ -11,253 +11,387 @@ from datetime import datetime
 import json
 import random
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # ==================== PAGE CONFIGURATION ====================
 st.set_page_config(
-    page_title="ShopImpact 🍃",
+    page_title="ShopImpact",
     page_icon="🍃",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# ==================== CONSTANTS - 500+ PRODUCTS ====================
+# ==================== CONSTANTS ====================
 PRODUCT_TYPES = [
-    # Fashion & Apparel (50 items)
-    'Fast Fashion', 'T-Shirt', 'Jeans', 'Dress', 'Suit', 'Jacket', 'Sweater', 'Hoodie', 'Shorts', 'Skirt',
-    'Blazer', 'Coat', 'Pants', 'Leggings', 'Activewear', 'Swimwear', 'Underwear', 'Socks', 'Shoes', 'Sneakers',
-    'Boots', 'Sandals', 'Heels', 'Hat', 'Scarf', 'Gloves', 'Belt', 'Handbag', 'Wallet', 'Backpack',
-    'Sunglasses', 'Watch', 'Jewelry', 'Tie', 'Formal Wear', 'Casual Wear', 'Sportswear', 'Winter Jacket',
-    'Rain Coat', 'Vest', 'Cardigan', 'Tank Top', 'Polo Shirt', 'Button-up Shirt', 'Maxi Dress', 'Jumpsuit',
-    'Romper', 'Kimono', 'Poncho', 'Shawl',
-    
-    # Electronics (80 items)
-    'Electronics', 'Smartphone', 'Laptop', 'Tablet', 'Desktop Computer', 'Monitor', 'Keyboard', 'Mouse',
-    'Headphones', 'Earbuds', 'Speaker', 'Smartwatch', 'Fitness Tracker', 'Camera', 'DSLR Camera', 'Webcam',
-    'Microphone', 'Gaming Console', 'Controller', 'VR Headset', 'Drone', 'Action Camera', 'Projector',
-    'TV', 'Streaming Device', 'Router', 'Modem', 'Network Switch', 'External Hard Drive', 'SSD', 'USB Drive',
-    'Memory Card', 'Power Bank', 'Charger', 'Cable', 'Phone Case', 'Screen Protector', 'Laptop Stand',
-    'Cooling Pad', 'Docking Station', 'Graphics Card', 'Processor', 'Motherboard', 'RAM', 'PSU',
-    'Computer Case', 'CPU Cooler', 'Thermal Paste', 'LED Strip', 'Gaming Chair', 'Desk Lamp',
-    'Surge Protector', 'Extension Cord', 'Adapter', 'Converter', 'KVM Switch', 'Drawing Tablet',
-    'E-Reader', 'Smart Home Hub', 'Smart Light Bulb', 'Smart Plug', 'Smart Thermostat', 'Security Camera',
-    'Video Doorbell', 'Smart Lock', 'Air Purifier', 'Robot Vacuum', 'Electric Toothbrush', 'Hair Dryer',
-    'Electric Shaver', 'Printer', 'Scanner', 'Ink Cartridge', 'Bluetooth Adapter', 'Wi-Fi Extender',
-    'Portable SSD', 'NAS Drive', 'USB Hub', 'Card Reader', 'Laptop Bag', 'Phone Gimbal',
-    
-    # Food & Groceries (70 items)
-    'Local Groceries', 'Organic Vegetables', 'Organic Fruits', 'Fresh Produce', 'Meat', 'Poultry', 'Seafood',
-    'Dairy Products', 'Milk', 'Cheese', 'Yogurt', 'Butter', 'Eggs', 'Bread', 'Pasta', 'Rice', 'Cereal',
-    'Oats', 'Granola', 'Snacks', 'Chips', 'Cookies', 'Chocolate', 'Candy', 'Ice Cream', 'Frozen Pizza',
-    'Frozen Vegetables', 'Frozen Meals', 'Canned Goods', 'Soup', 'Sauce', 'Condiments', 'Spices', 'Herbs',
-    'Oil', 'Vinegar', 'Honey', 'Jam', 'Peanut Butter', 'Nuts', 'Dried Fruits', 'Coffee', 'Tea',
-    'Juice', 'Soda', 'Energy Drink', 'Protein Shake', 'Protein Bar', 'Vitamins', 'Supplements',
-    'Baby Food', 'Pet Food', 'Dog Food', 'Cat Food', 'Treats', 'Water Bottles', 'Sparkling Water',
-    'Kombucha', 'Plant-based Milk', 'Vegan Cheese', 'Tofu', 'Tempeh', 'Quinoa', 'Chia Seeds',
-    'Protein Powder', 'Meal Kit', 'Ready-to-Eat Meal', 'Salad Kit', 'Smoothie Mix', 'Baking Mix',
-    
-    # Home & Furniture (60 items)
-    'Home Decor', 'Sofa', 'Couch', 'Chair', 'Dining Table', 'Coffee Table', 'Desk', 'Bed Frame', 'Mattress',
-    'Pillow', 'Bedding', 'Sheets', 'Duvet', 'Comforter', 'Blanket', 'Curtains', 'Blinds', 'Rug', 'Carpet',
-    'Lamp', 'Chandelier', 'Mirror', 'Picture Frame', 'Wall Art', 'Vase', 'Candle', 'Diffuser',
-    'Storage Box', 'Shelf', 'Bookshelf', 'Cabinet', 'Dresser', 'Nightstand', 'TV Stand', 'Ottoman',
-    'Bean Bag', 'Bar Stool', 'Office Chair', 'Filing Cabinet', 'Organizer', 'Basket', 'Plant Pot',
-    'Indoor Plant', 'Artificial Plant', 'Clock', 'Throw Pillow', 'Cushion', 'Table Runner', 'Placemat',
-    'Kitchenware', 'Cookware', 'Pots and Pans', 'Bakeware', 'Utensils', 'Cutlery', 'Plates', 'Bowls',
-    'Glasses', 'Mugs', 'Appliance',
-    
-    # Personal Care & Beauty (50 items)
-    'Cosmetics', 'Skincare', 'Moisturizer', 'Cleanser', 'Toner', 'Serum', 'Face Mask', 'Sunscreen', 'Lip Balm',
-    'Lipstick', 'Foundation', 'Concealer', 'Blush', 'Eyeshadow', 'Mascara', 'Eyeliner', 'Brow Pencil',
-    'Nail Polish', 'Perfume', 'Cologne', 'Deodorant', 'Body Lotion', 'Body Wash', 'Shampoo', 'Conditioner',
-    'Hair Mask', 'Hair Oil', 'Styling Product', 'Hair Spray', 'Hair Gel', 'Face Wash', 'Acne Treatment',
-    'Anti-aging Cream', 'Eye Cream', 'Exfoliator', 'Bath Bomb', 'Soap', 'Hand Soap', 'Hand Cream',
-    'Toothpaste', 'Mouthwash', 'Dental Floss', 'Razor', 'Shaving Cream', 'Aftershave', 'Makeup Remover',
-    'Cotton Pads', 'Q-tips', 'Brush Set', 'Sponge',
-    
-    # Books & Media (40 items)
-    'Books (New)', 'Books (Used)', 'Hardcover Book', 'Paperback Book', 'E-book', 'Audiobook', 'Textbook',
-    'Cookbook', 'Magazine', 'Comic Book', 'Graphic Novel', 'Manga', 'Novel', 'Non-fiction Book',
-    'Biography', 'Self-help Book', "Children's Book", 'Young Adult Book', 'Poetry Book', 'Art Book',
-    'Photography Book', 'Travel Guide', 'Dictionary', 'Encyclopedia', 'Notebook', 'Journal', 'Planner',
-    'Calendar', 'Stationery', 'Greeting Card', 'Postcard', 'Bookmark', 'DVD', 'Blu-ray', 'CD', 'Vinyl Record',
-    'Music Album', 'Video Game', 'Board Game', 'Puzzle',
-    
-    # Sports & Outdoors (40 items)
-    'Yoga Mat', 'Dumbbells', 'Kettlebell', 'Resistance Bands', 'Jump Rope', 'Foam Roller', 'Exercise Ball',
-    'Treadmill', 'Exercise Bike', 'Elliptical', 'Weight Bench', 'Running Shoes', 'Training Shoes',
-    'Sports Jersey', 'Athletic Shorts', 'Sports Bra', 'Compression Wear', 'Water Bottle', 'Gym Bag',
-    'Tent', 'Sleeping Bag', 'Camping Chair', 'Cooler', 'Backpack (Hiking)', 'Hiking Boots', 'Trekking Poles',
-    'Bicycle', 'Bike Helmet', 'Skateboard', 'Scooter', 'Rollerblades', 'Golf Clubs', 'Tennis Racket',
-    'Basketball', 'Football', 'Soccer Ball', 'Baseball Glove', 'Fishing Rod', 'Kayak', 'Surfboard',
-    
-    # Automotive (30 items)
-    'Car Parts', 'Motor Oil', 'Brake Pads', 'Air Filter', 'Spark Plugs', 'Battery', 'Wiper Blades',
-    'Headlights', 'Tires', 'Floor Mats', 'Seat Covers', 'Steering Wheel Cover', 'Phone Mount',
-    'Dash Cam', 'GPS', 'Car Charger', 'Air Freshener', 'Car Wash Supplies', 'Wax', 'Polish',
-    'Vacuum Cleaner (Car)', 'Jump Starter', 'Tool Kit', 'First Aid Kit', 'Emergency Kit',
-    'Roof Rack', 'Bike Rack', 'Cargo Net', 'Sunshade', 'Car Cover',
-    
-    # Restaurants & Dining (20 items)
-    'Restaurant Meal', 'Fast Food', 'Pizza', 'Burger', 'Sushi', 'Chinese Food', 'Indian Food', 'Mexican Food',
-    'Italian Food', 'Thai Food', 'Coffee', 'Latte', 'Cappuccino', 'Espresso', 'Bubble Tea', 'Smoothie',
-    'Dessert', 'Pastry', 'Cake', 'Ice Cream Cone',
-    
-    # Leather & Accessories (20 items)
-    'Leather Goods', 'Leather Jacket', 'Leather Bag', 'Leather Wallet', 'Leather Belt', 'Leather Boots',
-    'Leather Gloves', 'Leather Watch Strap', 'Leather Briefcase', 'Leather Sofa', 'Leather Chair',
-    'Faux Leather Jacket', 'Vegan Leather Bag', 'Cork Wallet', 'Canvas Bag', 'Nylon Backpack',
-    'Fabric Belt', 'Suede Shoes', 'Synthetic Boots', 'Eco-leather Item',
-    
-    # Second-Hand Items (20 items)
-    'Second-Hand Item', 'Thrifted Clothing', 'Used Electronics', 'Vintage Furniture', 'Refurbished Phone',
-    'Refurbished Laptop', 'Used Car', 'Used Bike', 'Vintage Jewelry', 'Antique', 'Collectible',
-    'Used Book', 'Used Appliance', 'Upcycled Item', 'Repurposed Furniture', 'Vintage Clothing',
-    'Consignment Item', 'Estate Sale Find', 'Garage Sale Item', 'Flea Market Find',
-    
-    # Office & School Supplies (30 items)
-    'Office Supplies', 'Pens', 'Pencils', 'Markers', 'Highlighters', 'Eraser', 'Correction Tape',
-    'Stapler', 'Paper Clips', 'Binder Clips', 'Folders', 'Binders', 'Paper', 'Notebook', 'Sticky Notes',
-    'Index Cards', 'Calculator', 'Tape', 'Scissors', 'Ruler', 'Hole Punch', 'Label Maker',
-    'File Organizer', 'Desk Organizer', 'Pen Holder', 'Whiteboard', 'Markers (Whiteboard)',
-    'Eraser (Whiteboard)', 'Bulletin Board', 'Push Pins',
-    
-    # Miscellaneous (20 items)
-    'Gift Card', 'Subscription Service', 'Digital Download', 'Online Course', 'Event Ticket', 'Movie Ticket',
-    'Concert Ticket', 'Sports Ticket', 'Museum Pass', 'Membership', 'Donation', 'Charity Contribution',
-    'Craft Supplies', 'Art Supplies', 'Paint', 'Brushes', 'Canvas', 'Yarn', 'Fabric', '500+ (Other)',
+    'Fast Fashion', 'T-Shirt', 'Jeans', 'Dress', 'Suit', 'Jacket', 'Sweater', 'Hoodie', 'Shorts', 
+    'Leggings', 'Activewear', 'Swimwear', 'Shoes', 'Sneakers', 'Boots', 'Handbag', 'Backpack',
+    'Smartphone', 'Laptop', 'Tablet', 'Headphones', 'Earbuds', 'Smartwatch', 'Gaming Console',
+    'Local Groceries', 'Organic Vegetables', 'Organic Fruits', 'Meat', 'Dairy Products', 'Coffee',
+    'Sofa', 'Chair', 'Dining Table', 'Bed Frame', 'Mattress', 'Rug', 'Lamp', 'Plant Pot',
+    'Skincare', 'Makeup', 'Perfume', 'Shampoo', 'Soap', 'Toothpaste',
+    'Books (New)', 'Books (Used)', 'Vinyl Record', 'Video Game',
+    'Yoga Mat', 'Dumbbells', 'Bicycle', 'Tent', 'Running Shoes',
+    'Second-Hand Item', 'Thrifted Clothing', 'Refurbished Tech', 'Vintage Furniture'
 ]
 
-# ==================== CONSTANTS - 500+ BRANDS ====================
 ALL_BRANDS = [
-    # Fashion Brands (100)
-    'Zara', 'H&M', 'Forever 21', 'Shein', 'Uniqlo', 'Gap', 'Old Navy', 'American Eagle', 'Abercrombie & Fitch',
-    'Hollister', 'Urban Outfitters', 'Anthropologie', 'Free People', 'Madewell', 'J.Crew', 'Banana Republic',
-    "Levi's", 'Wrangler', 'Lee', 'Diesel', 'True Religion', 'Calvin Klein', 'Tommy Hilfiger', 'Ralph Lauren',
-    'Lacoste', 'Hugo Boss', 'Armani', 'Versace', 'Gucci', 'Prada', 'Louis Vuitton', 'Chanel', 'Burberry',
-    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance', 'Converse', 'Vans', 'Skechers',
-    'Timberland', 'Dr. Martens', 'UGG', 'Crocs', 'Birkenstock', 'TOMS', 'Steve Madden', 'Aldo', 'DSW',
-    'Massimo Dutti', 'Bershka', 'Pull&Bear', 'Stradivarius', 'Mango', 'Topshop', 'ASOS', 'Boohoo',
-    'PrettyLittleThing', 'Missguided', 'Fashion Nova', 'Revolve', 'Reformation', 'Everlane', 'Patagonia',
-    'The North Face', 'Columbia', "Arc'teryx", 'Lululemon', 'Athleta', 'Fabletics', 'Gymshark', 'Alo Yoga',
-    'Outdoor Voices', 'Vuori', 'Rhone', 'Allbirds', "Rothy's", 'Veja', 'Kotn', 'Pact', 'Thought', 'People Tree',
-    'Eileen Fisher', 'Mara Hoffman', 'Stella McCartney', 'Vivienne Westwood', 'Comme des Garçons', 'Issey Miyake',
-    'Yohji Yamamoto', 'Rick Owens', 'Balenciaga', 'Off-White', 'Supreme', 'Stüssy', 'Carhartt', 'Dickies',
-    
-    # Electronics Brands (100)
-    'Apple', 'Samsung', 'Google', 'Microsoft', 'Dell', 'HP', 'Lenovo', 'Asus', 'Acer', 'MSI',
-    'Razer', 'Alienware', 'Sony', 'LG', 'Panasonic', 'Philips', 'Toshiba', 'Sharp', 'Hitachi', 'JVC',
-    'Canon', 'Nikon', 'Fujifilm', 'Olympus', 'Pentax', 'Leica', 'Hasselblad', 'GoPro', 'DJI', 'Parrot',
-    'Intel', 'AMD', 'Nvidia', 'Corsair', 'Kingston', 'Crucial', 'Western Digital', 'Seagate', 'SanDisk',
-    'Logitech', 'HyperX', 'SteelSeries', 'Cooler Master', 'NZXT', 'Thermaltake',
-    'Bose', 'JBL', 'Harman Kardon', 'Bang & Olufsen', 'Sennheiser', 'Audio-Technica', 'Shure', 'AKG',
-    'Beats', 'Skullcandy', 'Jabra', 'Anker', 'Aukey', 'RAVPower', 'Mophie', 'Belkin', 'Spigen', 'OtterBox',
-    'OnePlus', 'Xiaomi', 'Huawei', 'Oppo', 'Vivo', 'Realme', 'Motorola', 'Nokia', 'BlackBerry', 'HTC',
-    'Fitbit', 'Garmin', 'Polar', 'Suunto', 'Withings', 'Amazfit', 'Fossil', 'Tag Heuer', 'Rolex', 'Casio',
-    'Epson', 'Brother', 'Xerox', 'Ricoh', 'Kodak', 'Wacom', 'Huion', 'XP-Pen', 'Remarkable', 'Onyx Boox',
-    'Roku', 'Amazon', 'Chromecast', 'Apple TV', 'Fire TV', 'Nvidia Shield', 'TiVo', 'Sonos', 'Denon', 'Yamaha',
-    
-    # Food & Beverage Brands (80)
-    'Whole Foods', "Trader Joe's", 'Sprouts', 'Kroger', 'Safeway', 'Albertsons', 'Publix', 'Wegmans',
-    'H-E-B', 'Aldi', 'Lidl', 'Costco', "Sam's Club", "BJ's", 'Target', 'Walmart', 'Amazon Fresh',
-    'Instacart', 'FreshDirect', 'Thrive Market', 'Imperfect Foods', 'Misfits Market', 'ButcherBox',
-    'Coca-Cola', 'Pepsi', 'Dr Pepper', 'Sprite', 'Fanta', 'Mountain Dew', 'Red Bull', 'Monster', 'Rockstar',
-    'Starbucks', "Dunkin'", "Peet's Coffee", 'Blue Bottle', 'Intelligentsia', 'Stumptown', 'Lavazza',
-    'Illy', 'Nespresso', 'Keurig', 'Folgers', 'Maxwell House', 'Twinings', 'Lipton', 'Tazo', 'Celestial',
-    "Ben & Jerry's", 'Häagen-Dazs', 'Breyers', 'Talenti', 'Halo Top', 'So Delicious', 'Oatly', 'Silk',
-    'Almond Breeze', 'Chobani', 'Fage', 'Yoplait', 'Dannon', 'Nestle', 'Kraft', 'General Mills', "Kellogg's",
-    'Post', 'Quaker', 'Nature Valley', 'Kind', 'Clif Bar', 'RX Bar', 'Quest', 'Perfect Bar', 'Larabar',
-    "Annie's", "Amy's Kitchen", 'Gardein', 'Beyond Meat', 'Impossible Foods', 'Morningstar Farms',
-    
-    # Home & Furniture Brands (60)
-    'IKEA', 'Target', 'HomeGoods', 'West Elm', 'Pottery Barn', 'Crate & Barrel', 'CB2', 'Room & Board',
-    'Article', 'Burrow', 'Interior Define', 'Joybird', 'Floyd', 'Sabai', 'Medley', 'Lovesac', 'Ashley',
-    'La-Z-Boy', 'Ethan Allen', 'Bassett', 'Thomasville', 'Restoration Hardware', 'Arhaus', 'Serena & Lily',
-    'Williams Sonoma', 'Sur La Table', 'Bed Bath & Beyond', 'The Container Store', 'California Closets',
-    'Wayfair', 'Overstock', 'AllModern', 'Joss & Main', 'Birch Lane', 'Perigold', 'One Kings Lane',
-    'Anthropologie Home', 'Urban Outfitters Home', 'H&M Home', 'Zara Home', 'Muji', 'Daiso', 'Flying Tiger',
-    'Casper', 'Purple', 'Tuft & Needle', 'Leesa', 'Saatva', 'Helix', 'Brooklyn Bedding', 'Nectar',
-    'Tempur-Pedic', 'Sleep Number', 'Parachute', 'Brooklinen', 'Buffy', 'Boll & Branch', 'Coyuchi',
-    
-    # Beauty & Personal Care Brands (60)
-    'Sephora', 'Ulta', 'MAC', 'Lush', 'The Body Shop', "Kiehl's", 'Clinique', 'Estée Lauder', 'Lancôme',
-    "L'Oréal", 'Maybelline', 'NYX', 'e.l.f.', 'CoverGirl', 'Revlon', 'Neutrogena', 'Cetaphil', 'CeraVe',
-    'La Roche-Posay', 'Vichy', 'Olay', 'Dove', 'Nivea', 'Aveeno', 'Eucerin', 'Vaseline', 'Aquaphor',
-    'The Ordinary', 'Glossier', 'Drunk Elephant', 'Tatcha', 'Fresh', 'Origins', 'Philosophy', 'Benefit',
-    'Too Faced', 'Urban Decay', 'Anastasia Beverly Hills', 'Fenty Beauty', 'Rare Beauty', 'Haus Labs',
-    'Charlotte Tilbury', 'Pat McGrath Labs', 'Huda Beauty', 'Jeffree Star', 'ColourPop', 'Morphe',
-    'Milk Makeup', 'RMS Beauty', 'Ilia', 'Tower 28', 'Jones Road', 'Kosas', 'Saie', 'Merit', 'Westman Atelier',
-    'Chanel Beauty', 'Dior Beauty', 'YSL Beauty', 'Tom Ford Beauty', 'Giorgio Armani Beauty',
-    
-    # Book & Media Brands (30)
-    'Amazon', 'Barnes & Noble', 'Books-A-Million', 'Half Price Books', "Powell's Books", 'Strand',
-    'The Ripped Bodice', 'McNally Jackson', 'City Lights', 'Shakespeare and Company', 'Waterstones',
-    'Foyles', "Blackwell's", 'Book Depository', 'Better World Books', 'ThriftBooks', 'AbeBooks',
-    'Audible', 'Scribd', 'Kindle', 'Kobo', 'Nook', 'Apple Books', 'Google Play Books', 'OverDrive',
-    'Penguin Random House', 'HarperCollins', 'Simon & Schuster', 'Macmillan', 'Hachette',
-    
-    # Sports & Outdoor Brands (40)
-    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'New Balance', 'Asics', 'Brooks', 'Saucony',
-    'Hoka One One', 'On Running', 'Altra', 'Mizuno', 'Salomon', 'Merrell', 'Keen', 'Vasque', 'Oboz',
-    'The North Face', 'Patagonia', "Arc'teryx", 'Columbia', 'Marmot', 'Mountain Hardwear', 'Outdoor Research',
-    'Black Diamond', 'Petzl', 'MSR', 'Big Agnes', 'Nemo', 'REI', "Cabela's", 'Bass Pro Shops', "Dick's",
-    'Academy Sports', 'Decathlon', 'Lululemon', 'Athleta', 'Alo Yoga', 'Manduka', 'Jade Yoga', 'Liforme',
-    
-    # Automotive Brands (30)
-    'AutoZone', "O'Reilly", 'Advance Auto Parts', 'NAPA', 'Pep Boys', 'Firestone', 'Goodyear', 'Michelin',
-    'Bridgestone', 'Continental', 'Pirelli', 'Yokohama', 'Bosch', 'Denso', 'NGK', 'ACDelco', 'Mobil 1',
-    'Castrol', 'Valvoline', 'Pennzoil', 'Shell', 'BP', 'Chevron', '3M', 'Armor All', "Meguiar's",
-    'Chemical Guys', 'Turtle Wax', 'Rain-X', 'WeatherTech',
-    
-    # Additional Brands (100)
-    'Costco Kirkland', 'Amazon Basics', 'Great Value', '365 Everyday Value', 'Simple Truth', 'Market Pantry',
-    'Good & Gather', 'Up & Up', 'Equate', "Member's Mark", 'Private Selection', 'Signature Select',
-    'Local Farm', 'Farmers Market', 'Local Thrift', 'Goodwill', 'Salvation Army', 'ThredUp', 'Poshmark',
-    'Depop', 'Vinted', 'Mercari', 'OfferUp', 'Letgo', 'Facebook Marketplace', 'Craigslist', 'eBay',
-    'Etsy', 'Redbubble', 'Society6', 'Printful', 'Printify', 'Zazzle', 'CafePress', 'Spreadshirt',
-    'Local Restaurant', 'Local Cafe', 'Local Bakery', 'Local Boutique', 'Local Shop', 'Co-op',
-    'Small Business', 'Independent Store', 'Family Owned', 'Artisan', 'Handmade', 'Custom Made',
-    'Made to Order', 'Bespoke', 'Tailored', 'Vintage Store', 'Consignment Shop', 'Antique Store',
-    'Flea Market', 'Garage Sale', 'Estate Sale', 'Yard Sale', 'Community Sale', 'Swap Meet',
-    'Online Marketplace', 'Direct from Manufacturer', 'Wholesale', 'Bulk Buy', 'Discount Store',
-    'Dollar Store', 'Dollar Tree', 'Dollar General', 'Family Dollar', 'Five Below', '99 Cents Only',
-    'TJ Maxx', 'Marshalls', 'Ross', 'Burlington', 'Nordstrom Rack', 'Saks Off 5th', 'Neiman Marcus Last Call',
-    'Century 21', "Loehmann's", "Filene's Basement", 'Syms', "Daffy's", 'DSW', 'Famous Footwear',
-    'Payless', 'Shoe Carnival', 'Rack Room Shoes', 'Off Broadway Shoes', 'ShoeMall', 'Zappos',
-    'Amazon', 'eBay', 'Walmart', 'Target', 'Best Buy', 'Staples', 'Office Depot', 'Office Max',
+    'Zara', 'H&M', 'Shein', 'Uniqlo', 'Nike', 'Adidas', 'Patagonia', 'The North Face', 'Lululemon',
+    'Apple', 'Samsung', 'Sony', 'Dell', 'HP', 'Lenovo', 'Asus', 'Logitech',
+    'Whole Foods', 'Trader Joes', 'Local Farm', 'Farmers Market', 'Nestle', 'Coca-Cola', 'Starbucks',
+    'IKEA', 'West Elm', 'Pottery Barn', 'Target', 'Wayfair',
+    'Sephora', 'Ulta', 'The Ordinary', 'Glossier', 'Lush',
+    'Amazon', 'Barnes & Noble', 'ThriftBooks', 'Goodwill', 'Salvation Army', 'Local Thrift Store',
+    'Etsy', 'eBay', 'Depop', 'Poshmark', 'Back Market'
 ]
 
-# ==================== PRODUCT MULTIPLIERS ====================
 def get_product_multiplier(product_type: str) -> float:
-    """Get CO2 multiplier for a product type"""
-    multipliers = {
-        # Fashion & Apparel
-        'Fast Fashion': 2.5, 'T-Shirt': 2.3, 'Jeans': 3.2, 'Dress': 2.8, 'Suit': 4.0, 'Jacket': 3.5,
-        'Sweater': 2.6, 'Hoodie': 2.4, 'Shorts': 2.0, 'Skirt': 2.2, 'Blazer': 3.8, 'Coat': 4.2,
-        'Pants': 2.9, 'Leggings': 1.8, 'Activewear': 2.1, 'Swimwear': 2.0, 'Underwear': 1.5, 'Socks': 0.8,
-        'Shoes': 3.0, 'Sneakers': 2.8, 'Boots': 3.5, 'Sandals': 2.0, 'Heels': 2.5, 'Hat': 1.2,
-        'Scarf': 1.0, 'Gloves': 1.1, 'Belt': 1.5, 'Handbag': 2.5, 'Wallet': 1.3, 'Backpack': 2.0,
-        'Sunglasses': 1.0, 'Watch': 2.0, 'Jewelry': 1.8, 'Tie': 0.9, 'Formal Wear': 3.5,
-        'Casual Wear': 2.3, 'Sportswear': 2.1, 'Winter Jacket': 4.5, 'Rain Coat': 2.8, 'Vest': 2.0,
-        'Cardigan': 2.4, 'Tank Top': 1.6, 'Polo Shirt': 2.0, 'Button-up Shirt': 2.2, 'Maxi Dress': 3.0,
-        'Jumpsuit': 2.7, 'Romper': 2.3, 'Kimono': 2.5, 'Poncho': 2.2, 'Shawl': 1.8,
+    """Simplified multiplier logic for demo purposes"""
+    if product_type in ['Fast Fashion', 'Meat', 'SUV', 'Plane Ticket']: return 3.5
+    if product_type in ['Electronics', 'Furniture', 'Leather']: return 2.5
+    if product_type in ['Dairy', 'Imported Food']: return 1.5
+    if product_type in ['Local Groceries', 'Organic', 'Public Transport']: return 0.3
+    if 'Second-Hand' in product_type or 'Used' in product_type or 'Thrift' in product_type: return 0.1
+    return 1.0
+
+ECO_FRIENDLY_CATEGORIES = [
+    'Second-Hand Item', 'Local Groceries', 'Books (Used)', 'Thrifted Clothing',
+    'Used Electronics', 'Vintage Furniture', 'Organic Vegetables', 'Organic Fruits',
+    'Refurbished Phone', 'Refurbished Tech', 'Used Book', 'Upcycled Item'
+]
+
+TIPS_LIST = [
+    '🌍 Buying second-hand reduces CO₂ by up to 80%!',
+    '🌱 Local produce has 5x less carbon footprint.',
+    '♻️ Repairing items saves tons of emissions.',
+    '🎒 BYO bag saves ~6kg of CO₂ per year.',
+    '🌾 Plant-based meals = 50% less carbon impact.',
+]
+
+DATA_FILE = Path("shopimpact_data.json")
+
+# ==================== DATA LOGIC ====================
+@st.cache_data
+def load_data_cached() -> Dict:
+    if DATA_FILE.exists():
+        try:
+            with open(DATA_FILE, 'r') as f: return json.load(f)
+        except: return get_default_data()
+    return get_default_data()
+
+def save_data(data: Dict) -> None:
+    with open(DATA_FILE, 'w') as f: json.dump(data, f, indent=2)
+    load_data_cached.clear()
+
+def get_default_data() -> Dict:
+    return {
+        'purchases': [],
+        'user_profile': {'name': '', 'monthlyBudget': 15000, 'co2Goal': 50, 'joinDate': datetime.now().strftime('%Y-%m-%d')},
+        'settings': {'highContrast': False}
+    }
+
+if 'initialized' not in st.session_state:
+    data = load_data_cached()
+    st.session_state.purchases = data.get('purchases', [])
+    st.session_state.user_profile = data.get('user_profile', get_default_data()['user_profile'])
+    st.session_state.settings = data.get('settings', {'highContrast': False})
+    st.session_state.show_success = False
+    st.session_state.success_message = ''
+    st.session_state.initialized = True
+
+# ==================== GAMIFICATION LOGIC ====================
+def get_user_badges(purchases, user_profile):
+    total_purchases = len(purchases)
+    if total_purchases == 0: return []
+    
+    eco_count = sum(1 for p in purchases if p['type'] in ECO_FRIENDLY_CATEGORIES)
+    current_month = datetime.now().month
+    month_purchases = [p for p in purchases if datetime.strptime(p['date'], '%Y-%m-%d').month == current_month]
+    month_spend = sum(p['price'] for p in month_purchases)
+
+    badges = [
+        {"id": "starter", "name": "The Starter", "icon": "🌱", "desc": "Logged first purchase", "condition": total_purchases >= 1},
+        {"id": "eco_warrior", "name": "Eco Warrior", "icon": "🛡️", "desc": "Bought 5+ eco items", "condition": eco_count >= 5},
+        {"id": "thrift_master", "name": "Thrift Master", "icon": "🧥", "desc": "Bought 3+ used items", "condition": sum(1 for p in purchases if "Second-Hand" in p['type'] or "Used" in p['type'] or "Thrift" in p['type']) >= 3},
+        {"id": "budget_boss", "name": "Budget Boss", "icon": "🐖", "desc": "Under budget (min 5 items)", "condition": len(month_purchases) >= 5 and month_spend <= user_profile.get('monthlyBudget', 15000)},
+        {"id": "local_legend", "name": "Local Legend", "icon": "🏘️", "desc": "Bought 3 'Local' items", "condition": sum(1 for p in purchases if "Local" in p['type']) >= 3}
+    ]
+    for badge in badges: badge['earned'] = badge.pop('condition')
+    return badges
+
+def add_purchase(product_type, brand, price):
+    old_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
+    old_earned = {b['id'] for b in old_badges if b['earned']}
+
+    co2_impact = price * get_product_multiplier(product_type)
+    purchase = {'date': datetime.now().strftime('%Y-%m-%d'), 'type': product_type, 'brand': brand, 'price': float(price), 'co2_impact': float(co2_impact)}
+    st.session_state.purchases.append(purchase)
+    
+    save_data({'purchases': st.session_state.purchases, 'user_profile': st.session_state.user_profile, 'settings': st.session_state.settings})
+    
+    new_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
+    new_earned = {b['id'] for b in new_badges if b['earned']}
+    newly_unlocked = new_earned - old_earned
+
+    if newly_unlocked:
+        badge_name = next(b['name'] for b in new_badges if b['id'] == list(newly_unlocked)[0])
+        st.session_state.success_message = f"🏆 Badge Unlocked: {badge_name}!"
+        st.balloons()
+    elif product_type in ECO_FRIENDLY_CATEGORIES:
+        st.session_state.success_message = f"🌿 Excellent! Eco-friendly choice recorded."
+        st.snow()
+    else:
+        st.session_state.success_message = f"✅ Logged! {product_type} added."
+    st.session_state.show_success = True
+
+# ==================== 🎨 HIGH-CONTRAST MODERN UI ====================
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+    /* Global Font */
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
+        color: #1e293b;
+    }
+    
+    /* Background - Soft Mint Gradient */
+    .stApp {
+        background: linear-gradient(135deg, #d1fae5 0%, #ecfccb 100%);
+    }
+
+    /* HEADERS - Forced Dark Green for Visibility */
+    h1, h2, h3, [data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h3 {
+        color: #064e3b !important; /* Deep Forest Green */
+        font-weight: 700 !important;
+        text-shadow: none !important;
+    }
+    
+    /* SUBTITLES - Dark Grey */
+    p, .stMarkdown p {
+        color: #334155 !important;
+        font-size: 16px;
+    }
+
+    /* CARDS - Solid White for Readability */
+    .stCard, div[data-testid="stForm"], div[data-testid="stMetric"] {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #f8fafc;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    /* INPUTS - High Contrast Borders */
+    .stTextInput > div > div > input, .stSelectbox > div > div > div {
+        background-color: #ffffff;
+        border: 2px solid #cbd5e1;
+        color: #0f172a;
+        border-radius: 10px;
+    }
+    .stTextInput > div > div > input:focus, .stSelectbox > div > div > div:focus {
+        border-color: #10b981;
+    }
+
+    /* BUTTONS - Solid Dark Green */
+    div.stButton > button {
+        background-color: #059669;
+        color: white !important;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    div.stButton > button:hover {
+        background-color: #047857;
+    }
+
+    /* METRICS - Darker Numbers */
+    [data-testid="stMetricValue"] {
+        color: #059669 !important;
+        font-weight: 700;
+        font-size: 28px !important;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #64748b !important;
+    }
+
+    /* TABS */
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255,255,255,0.6);
+        border-radius: 8px;
+        color: #475569;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #059669 !important;
+        color: white !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==================== MAIN UI ====================
+
+# --- Header Section ---
+col_logo, col_title = st.columns([1, 6])
+with col_logo:
+    st.markdown("<div style='font-size: 60px; text-align: right;'>🌿</div>", unsafe_allow_html=True)
+with col_title:
+    st.markdown("# ShopImpact")
+    st.markdown("### Your mindful companion for a greener planet.")
+
+st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True) # Spacer
+
+# --- Tabs ---
+tab1, tab2 = st.tabs(["📊 Dashboard & Logger", "👤 My Profile"])
+
+with tab1:
+    col_main, col_sidebar = st.columns([2.2, 1])
+
+    # --- MAIN CONTENT ---
+    with col_main:
+        # 1. ADD PURCHASE CARD
+        st.markdown("#### 🛍️ Log New Item")
+        with st.form("purchase_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            with c1:
+                product_type = st.selectbox("Category", options=PRODUCT_TYPES)
+            with c2:
+                final_brand = st.selectbox("Brand", options=ALL_BRANDS)
+            
+            price = st.slider("Price (₹)", 0, 50000, 1000, 100)
+            
+            # Live CO2 preview
+            est_co2 = price * get_product_multiplier(product_type)
+            st.caption(f"Estimated Impact: **{est_co2:.1f} kg CO₂**")
+            
+            submitted = st.form_submit_button("Add to Tracker")
+            if submitted:
+                add_purchase(product_type, final_brand, price)
+                st.rerun()
+
+        # Success Message Area
+        if st.session_state.show_success:
+            st.success(st.session_state.success_message)
+            st.session_state.show_success = False
+
+        st.markdown("<div style='height: 30px'></div>", unsafe_allow_html=True)
+
+        # 2. METRICS ROW
+        if st.session_state.purchases:
+            df = pd.DataFrame(st.session_state.purchases)
+            total_co2 = df['co2_impact'].sum()
+            total_spend = df['price'].sum()
+            
+            st.markdown("#### 📈 Overview")
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total Spend", f"₹{total_spend:,.0f}", delta="Lifetime")
+            m2.metric("Carbon Footprint", f"{total_co2:.1f} kg", delta_color="inverse")
+            m3.metric("Items Logged", len(df))
+
+            # 3. CHARTS
+            st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
+            c_chart1, c_chart2 = st.columns(2)
+            
+            with c_chart1:
+                # Custom Eco-Themed Bar Chart
+                fig_bar = px.bar(
+                    df.groupby('type')['co2_impact'].sum().reset_index().nlargest(5, 'co2_impact'),
+                    x='type', y='co2_impact',
+                    title='High Impact Items',
+                    color='co2_impact',
+                    color_continuous_scale=['#a7f3d0', '#34d399', '#059669', '#064e3b'] # Custom Green Gradient
+                )
+                fig_bar.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)', 
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font={'family': 'Poppins'},
+                    coloraxis_showscale=False
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+            with c_chart2:
+                # Donut Chart
+                fig_pie = px.pie(
+                    df.groupby('type')['price'].sum().reset_index().nlargest(5, 'price'),
+                    values='price', names='type',
+                    title='Spending Habits',
+                    color_discrete_sequence=px.colors.sequential.Tealgrn
+                )
+                fig_pie.update_traces(hole=.4, hoverinfo="label+percent+name")
+                fig_pie.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font={'family': 'Poppins'}
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
+                
+            # Recent History Table
+            st.markdown("#### 🧾 Recent Logs")
+            st.dataframe(
+                df[['date', 'type', 'brand', 'price', 'co2_impact']].tail(5).sort_values('date', ascending=False),
+                use_container_width=True,
+                hide_index=True
+            )
+
+    # --- SIDEBAR CONTENT ---
+    with col_sidebar:
+        # Profile Mini Card
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #059669, #34d399); padding: 15px; border-radius: 15px; color: white; margin-bottom: 20px;">
+            <div style="font-weight: 600; font-size: 14px;">CURRENT LEVEL</div>
+            <div style="font-weight: 700; font-size: 24px;">Eco Enthusiast</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("### 🏆 Badges")
+        my_badges = get_user_badges(st.session_state.purchases, st.session_state.user_profile)
         
-        # Electronics
-        'Electronics': 1.8, 'Smartphone': 2.5, 'Laptop': 3.0, 'Tablet': 2.2, 'Desktop Computer': 3.5,
-        'Monitor': 2.0, 'Keyboard': 0.8, 'Mouse': 0.5, 'Headphones': 0.9, 'Earbuds': 0.6, 'Speaker': 1.2,
-        'Smartwatch': 1.5, 'Fitness Tracker': 0.8, 'Camera': 2.5, 'DSLR Camera': 3.0, 'Webcam': 0.7,
-        'Microphone': 0.9, 'Gaming Console': 2.8, 'Controller': 0.8, 'VR Headset': 2.0, 'Drone': 2.5,
-        'Action Camera': 1.5, 'Projector': 2.0, 'TV': 3.5, 'Streaming Device': 0.6, 'Router': 0.8,
-        'Modem': 0.7, 'Network Switch': 0.9, 'External Hard Drive': 0.8, 'SSD': 0.6, 'USB Drive': 0.3,
-        'Memory Card': 0.2, 'Power Bank': 0.7, 'Charger': 0.4, 'Cable': 0.2, 'Phone Case': 0.3,
-        'Screen Protector': 0.1, 'Laptop Stand': 0.5, 'Cooling Pad': 0.6, 'Docking Station': 0.9,
-        'Graphics Card': 2.0, 'Processor': 1.5, 'Motherboard': 1.8, 'RAM': 0.7, 'PSU': 1.2,
-        'Computer Case': 1.5, 'CPU Cooler': 0.8, 'Thermal Paste': 0.1, 'LED Strip': 0.3,
-        'Gaming Chair': 2.5, 'Desk Lamp': 0.6, 'Surge Protector': 0.5, 'Extension Cord': 0.3,
-        'Adapter': 0.2, 'Converter': 0.3, 'KVM Switch': 0.6, 'Drawing Tablet': 1.5, 'E-Reader': 1.0,
-        'Smart Home Hub': 0.8, 'Smart Light Bulb': 0.3, 'Smart Plug': 0.2, 'Smart Thermostat': 0.8,
-        'Security Camera': 1.0, 'Video Doorbell': 0.9, 'Smart Lock': 0.7, 'Air Purifier': 1.5,
-        'Robot Vacuum': 2.0, 'Electric Toothbrush': 0.5, 'Hair Dryer': 0.8, 'Electric Shaver': 0.6,
-        'Printer': 1.5, 'Scanner': 1.2, 'Ink Cartridge': 0.4, 'Bluetooth Adapter': 0.2,
-        'Wi-Fi Extender': 0.5, 'Portable SSD': 0.6, 'NAS Drive': 1.8, 'USB Hub': 0.3,
-        'Card Reader': 0.2, 'Laptop Bag': 1.0, 'Phone Gimbal': 
+        if not my_badges:
+            st.info("Log items to unlock!")
+        else:
+            # Grid Layout for Badges
+            rows = [my_badges[i:i + 3] for i in range(0, len(my_badges), 3)]
+            for row in rows:
+                cols = st.columns(3)
+                for idx, badge in enumerate(row):
+                    with cols[idx]:
+                        if badge['earned']:
+                            # UNLOCKED: White card with green border
+                            st.markdown(f"""
+                            <div style="text-align: center; background: white; border-radius: 12px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid #86efac;" title="{badge['name']}">
+                                <div style="font-size: 24px;">{badge['icon']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            # LOCKED: Grey card (so you can see it exists)
+                            st.markdown(f"""
+                            <div style="text-align: center; background: #e2e8f0; border-radius: 12px; padding: 12px; opacity: 0.7;" title="Locked: {badge['desc']}">
+                                <div style="font-size: 24px; filter: grayscale(1);">🔒</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.markdown("### 💡 Daily Tip")
+        st.info(random.choice(TIPS_LIST), icon="🌱")
+        
+        # Clear Data Option
+        with st.expander("⚙️ Settings"):
+            if st.button("Reset Data", type="secondary"):
+                st.session_state.purchases = []
+                save_data({'purchases': [], 'user_profile': st.session_state.user_profile, 'settings': {}})
+                st.rerun()
+
+with tab2:
+    st.markdown("### Edit Profile")
+    st.caption("Adjust your goals and budget here.")
+    with st.form("prof_form"):
+        st.text_input("Name", value=st.session_state.user_profile.get('name', ''))
+        st.number_input("Budget", value=15000)
+        st.form_submit_button("Save Changes")

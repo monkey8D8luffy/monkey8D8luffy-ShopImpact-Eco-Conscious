@@ -239,3 +239,62 @@ elif selected == "Badges":
 # ==================== FOOTER ====================
 st.sidebar.markdown("---")
 st.sidebar.caption("v2.0 • Optimized for Nature & Clarity")
+# Add these imports at the top
+import io
+
+# ==================== NEW FEATURES ADDED BELOW ====================
+
+# 1. SUSTAINABLE COMPARISON TOOL (Add to "Track" or a new section)
+if selected == "Track":
+    # ... (previous logging code) ...
+    
+    st.divider()
+    st.subheader("⚖️ Sustainable Comparison Tool")
+    st.info("Compare the impact of your purchase before you log it.")
+    
+    comp_col1, comp_col2 = st.columns(2)
+    with comp_col1:
+        comp_cat = st.selectbox("Select Category to Compare", list(PRODUCT_DATA.keys()), key="comp_cat")
+        comp_item = st.selectbox("Select Item", list(PRODUCT_DATA[comp_cat].keys()), key="comp_item")
+    
+    base_impact = PRODUCT_DATA[comp_cat][comp_item]
+    thrift_impact = base_impact * 0.3 # 70% reduction for second-hand
+    savings = base_impact - thrift_impact
+
+    with comp_col2:
+        st.write(f"**Standard Impact:** {base_impact} kg CO₂")
+        st.write(f"**Eco-Option Impact:** {thrift_impact:.1f} kg CO₂")
+        st.success(f"Potential Savings: **{savings:.1f} kg CO₂**")
+
+    # 
+
+# 2. DATA EXPORT FEATURE (Add to "Analytics")
+elif selected == "Analytics":
+    if not st.session_state.purchases:
+        st.warning("No data to export.")
+    else:
+        # ... (previous analytics charts) ...
+        
+        st.divider()
+        st.subheader("📥 Export Your Data")
+        
+        # Convert DataFrame to CSV
+        df = pd.DataFrame(st.session_state.purchases)
+        csv = df.to_csv(index=False).encode('utf-8')
+        
+        st.download_button(
+            label="Download Shopping History as CSV",
+            data=csv,
+            file_name=f"ecotrack_report_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime='text/csv',
+            help="Download your logs to open in Excel or Google Sheets"
+        )
+
+# 3. ADVANCED BRAND FILTERING (Improved Analytics)
+        st.markdown("### 🏷️ Brand Performance")
+        brand_perf = df.groupby('Brand')['CO2'].mean().reset_index()
+        fig_brand = px.bar(brand_perf, x='Brand', y='CO2', 
+                          title="Average Carbon Intensity by Brand",
+                          color='CO2', color_continuous_scale='RdYlGn_r')
+        st.plotly_chart(fig_brand, use_container_width=True)
+

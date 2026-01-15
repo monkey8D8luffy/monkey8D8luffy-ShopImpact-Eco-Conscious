@@ -1,18 +1,18 @@
 """
-ShopImpact - Ultimate Streamlit Edition
-Fully Optimized, Gamified, and Beautifully Animated.
+ShopImpact - Ultimate Streamlit Edition v3.0
+Fixed Dropdowns, Enhanced Analytics (Water & Trees), and High Contrast UI.
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import random
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 
 # ==================== PAGE CONFIGURATION ====================
 st.set_page_config(
@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==================== ADVANCED CSS & ANIMATIONS ====================
+# ==================== ADVANCED CSS & THEME FIXES ====================
 st.markdown("""
 <style>
     /* --- GLOBAL THEME --- */
@@ -30,7 +30,7 @@ st.markdown("""
     
     html, body, [class*="css"] {
         font-family: 'Nunito', sans-serif;
-        color: #000000 !important; /* FORCE BLACK TEXT */
+        color: #000000 !important;
     }
 
     .stApp {
@@ -38,503 +38,384 @@ st.markdown("""
         background-attachment: fixed;
     }
 
-    /* --- TEXT VISIBILITY FIXES --- */
-    h1, h2, h3, h4, h5, h6, p, div, span, label, .stMarkdown {
+    /* --- CRITICAL FIX: DROPDOWN & INPUT VISIBILITY --- */
+    /* Forces the dropdown menu (popover) to be white with black text */
+    div[data-baseweb="popover"], div[data-baseweb="select"], div[role="listbox"] {
+        background-color: #ffffff !important;
         color: #000000 !important;
     }
     
-    /* Make input labels black */
+    /* Target specific list items in the dropdown */
+    li[role="option"] {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Hover state for dropdown items */
+    li[role="option"]:hover {
+        background-color: #e8f5e9 !important; /* Light green hover */
+        color: #000000 !important;
+    }
+
+    /* Make selected value in the box visible */
+    div[data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border-color: #4caf50 !important;
+    }
+
+    /* Input labels and text */
     .stSelectbox label, .stNumberInput label, .stSlider label, .stTextInput label {
         color: #000000 !important;
-        font-weight: bold;
+        font-weight: 800 !important;
+        font-size: 1.1rem !important;
     }
-
-    /* --- FALLING LEAF ANIMATION --- */
-    @keyframes dropAndDry {
-        0% { transform: translateY(-10vh) rotate(0deg) translateX(0px); opacity: 0; filter: hue-rotate(0deg); }
-        10% { opacity: 1; }
-        50% { filter: hue-rotate(0deg); } /* Green */
-        80% { filter: hue-rotate(90deg) sepia(1); } /* Dried/Brown */
-        100% { transform: translateY(110vh) rotate(720deg) translateX(50px); opacity: 0; filter: hue-rotate(90deg) sepia(1); }
-    }
-
-    .leaf {
-        position: fixed;
-        top: 0;
-        left: 50%;
-        font-size: 2rem;
-        animation: dropAndDry 15s infinite linear;
-        pointer-events: none;
-        z-index: 0;
-    }
-    
-    .leaf:nth-child(1) { left: 10%; animation-duration: 12s; animation-delay: 0s; }
-    .leaf:nth-child(2) { left: 30%; animation-duration: 18s; animation-delay: 2s; font-size: 1.5rem; }
-    .leaf:nth-child(3) { left: 70%; animation-duration: 14s; animation-delay: 5s; }
-    .leaf:nth-child(4) { left: 90%; animation-duration: 20s; animation-delay: 1s; font-size: 2.5rem; }
 
     /* --- GLASSMORPHISM CARDS --- */
     div[data-testid="stMetric"], div[class*="stCard"] {
-        background: rgba(255, 255, 255, 0.85); /* Increased opacity for readability */
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.9); /* High opacity for readability */
+        backdrop-filter: blur(15px);
         border-radius: 20px;
         padding: 20px;
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        transition: transform 0.3s ease;
     }
 
     div[data-testid="stMetric"]:hover {
         transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
     }
     
-    /* --- METRIC TEXT COLOR --- */
-    [data-testid="stMetricValue"] {
-        color: #000000 !important;
-    }
-    [data-testid="stMetricLabel"] {
-        color: #333333 !important;
-    }
-
-    /* --- UI TRANSITIONS --- */
-    .element-container {
-        animation: fadeIn 0.8s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    /* --- METRIC COLORS --- */
+    [data-testid="stMetricValue"] { color: #000000 !important; }
+    [data-testid="stMetricLabel"] { color: #444444 !important; }
+    [data-testid="stMetricDelta"] { font-weight: bold; }
 
     /* --- BUTTONS --- */
     .stButton > button {
-        background: linear-gradient(45deg, #43a047, #66bb6a);
-        color: white !important; /* Keep button text white */
+        background: linear-gradient(45deg, #2e7d32, #66bb6a);
+        color: white !important;
         border: none;
-        border-radius: 15px;
-        padding: 10px 25px;
-        font-weight: 700;
-        box-shadow: 0 4px 15px rgba(67, 160, 71, 0.3);
+        border-radius: 12px;
+        padding: 12px 28px;
+        font-weight: 800;
+        box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
         transition: all 0.3s ease;
     }
-
     .stButton > button:hover {
         transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(67, 160, 71, 0.5);
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.5);
     }
     
     /* --- TABS --- */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: rgba(255,255,255,0.6);
+        background-color: rgba(255,255,255,0.8);
         border-radius: 15px;
-        padding: 10px;
+        padding: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: transparent;
-        border-radius: 10px;
-        color: #000000;
         font-weight: 800;
+        color: #555555;
     }
-
     .stTabs [aria-selected="true"] {
-        background-color: #fff;
+        background-color: #ffffff;
         color: #2e7d32 !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    /* --- LEAF ANIMATION --- */
+    @keyframes dropAndDry {
+        0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.8; }
+        100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+    }
+    .leaf {
+        position: fixed;
+        font-size: 1.5rem;
+        animation: dropAndDry 20s infinite linear;
+        pointer-events: none;
+        z-index: 0;
+        color: #a5d6a7; /* Subtle green */
     }
 </style>
-<div class="leaf">🍃</div>
-<div class="leaf">🍂</div>
-<div class="leaf">🍃</div>
-<div class="leaf">🍂</div>
+<div class="leaf" style="left: 10%; animation-delay: 0s;">🍃</div>
+<div class="leaf" style="left: 30%; animation-delay: 5s;">🍂</div>
+<div class="leaf" style="left: 70%; animation-delay: 2s;">🌿</div>
+<div class="leaf" style="left: 90%; animation-delay: 8s;">🌱</div>
 """, unsafe_allow_html=True)
 
-# ==================== CONSTANTS ====================
-PRODUCT_TYPES = [
-    'Fast Fashion', 'T-Shirt', 'Jeans', 'Dress', 'Suit', 'Jacket', 'Sweater', 'Hoodie', 'Shorts', 'Skirt',
-    'Blazer', 'Coat', 'Pants', 'Leggings', 'Activewear', 'Swimwear', 'Underwear', 'Socks', 'Shoes', 'Sneakers',
-    'Electronics', 'Smartphone', 'Laptop', 'Tablet', 'Desktop Computer', 'Monitor', 'Keyboard', 'Mouse',
-    'Headphones', 'Gaming Console', 'Smartwatch', 'Camera', 'TV', 'Speaker', 'Drone',
-    'Local Groceries', 'Organic Vegetables', 'Organic Fruits', 'Meat', 'Dairy Products', 'Snacks',
-    'Home Decor', 'Sofa', 'Chair', 'Table', 'Bed', 'Mattress', 'Kitchenware', 'Appliance',
-    'Cosmetics', 'Skincare', 'Perfume', 'Hair Care', 'Personal Care',
-    'Books (New)', 'Books (Used)', 'E-book', 'Vinyl Record', 'Video Game',
-    'Yoga Mat', 'Gym Equipment', 'Bicycle', 'Sports Gear', 'Camping Gear',
-    'Car Parts', 'Tires', 'Car Accessories',
-    'Restaurant Meal', 'Fast Food', 'Coffee', 'Dessert',
-    'Leather Goods', 'Vegan Leather',
-    'Second-Hand Item', 'Thrifted Clothing', 'Used Electronics', 'Vintage Furniture', 'Refurbished Tech',
-    'Office Supplies', 'Stationery', 'Art Supplies',
-    'Gift Card', 'Subscription', 'Event Ticket', 'Digital Download', '500+ (Other)'
-]
-
-ALL_BRANDS = [
-    'Zara', 'H&M', 'Nike', 'Adidas', 'Uniqlo', 'Gucci', 'Louis Vuitton', 'Patagonia', 'The North Face', 'Levi\'s',
-    'Apple', 'Samsung', 'Sony', 'Dell', 'HP', 'Lenovo', 'Asus', 'Microsoft', 'Google', 'Canon',
-    'Whole Foods', 'Trader Joe\'s', 'Nestle', 'Coca-Cola', 'Pepsi', 'Danone', 'Beyond Meat',
-    'IKEA', 'West Elm', 'Pottery Barn', 'Ashley Furniture', 'Wayfair',
-    'Sephora', 'L\'Oreal', 'Estee Lauder', 'Mac', 'Fenty Beauty', 'The Body Shop', 'Lush',
-    'Amazon', 'Barnes & Noble', 'Penguin Random House', 'Nintendo', 'PlayStation', 'Xbox',
-    'Toyota', 'Honda', 'Ford', 'Tesla', 'BMW',
-    'Local Thrift Store', 'Goodwill', 'Salvation Army', 'Depop', 'Poshmark', 'Etsy', 'eBay',
-    'Local Farm', 'Farmers Market', 'Small Business', 'Handmade', 'Generic', 'Other'
-]
-
-# Simplified Multipliers for logic
-def get_product_multiplier(product_type: str) -> float:
-    base_multipliers = {
-        'Fast Fashion': 2.5, 'Jeans': 3.2, 'Coat': 4.2, 'Shoes': 3.0,
-        'Electronics': 1.8, 'Smartphone': 2.5, 'Laptop': 3.0, 'Desktop Computer': 3.5,
-        'Meat': 1.5, 'Dairy Products': 0.6, 'Local Groceries': 0.3, 'Organic Vegetables': 0.2,
-        'Sofa': 4.0, 'Bed': 3.5, 'Appliance': 2.0,
-        'Cosmetics': 1.5, 'Perfume': 1.5,
-        'Books (New)': 0.5, 'Books (Used)': 0.05, 'E-book': 0.02,
-        'Bicycle': 5.0, 'Car Parts': 2.0,
-        'Second-Hand Item': 0.1, 'Thrifted Clothing': 0.08, 'Used Electronics': 0.15,
-        'Digital Download': 0.02, 'Service': 0.0
-    }
-    if product_type in base_multipliers:
-        return base_multipliers[product_type]
-    elif 'Used' in product_type or 'Second-Hand' in product_type or 'Thrift' in product_type:
-        return 0.1
-    elif 'Leather' in product_type:
-        return 3.5
-    elif 'Plastic' in product_type:
-        return 2.0
-    else:
-        return 1.0
-
-ECO_FRIENDLY_CATEGORIES = [
-    'Second-Hand Item', 'Local Groceries', 'Books (Used)', 'Thrifted Clothing',
-    'Used Electronics', 'Vintage Furniture', 'Organic Vegetables', 'Organic Fruits',
-    'Refurbished Tech', 'Bicycle', 'Vegan Leather', 'Digital Download'
-]
-
-# ==================== BADGE SYSTEM ====================
-BADGES = {
-    'first_step': {'name': '🌱 First Step', 'desc': 'Logged your first purchase', 'icon': '🌱'},
-    'thrift_king': {'name': '👑 Thrift King', 'desc': 'Bought 3 second-hand items', 'icon': '👑'},
-    'low_carbon': {'name': '🍃 Low Carbon', 'desc': 'Logged an item with < 1kg CO₂', 'icon': '🍃'},
-    'big_saver': {'name': '💰 Big Saver', 'desc': 'Spent over ₹10,000 in one go', 'icon': '💰'},
-    'eco_warrior': {'name': '🛡️ Eco Warrior', 'desc': 'Maintained < 50kg CO₂ total', 'icon': '🛡️'},
-    'consistent': {'name': '📅 Consistent', 'desc': 'Logged 5 items total', 'icon': '📅'}
+# ==================== IMPACT LOGIC (WATER & TREES) ====================
+# Data Sources: Global footprint network averages (simplified for app)
+IMPACT_DATA = {
+    # Fashion (High Water)
+    'Jeans': {'co2': 33.4, 'water': 7500, 'trees': 0.0},
+    'T-Shirt': {'co2': 7.0, 'water': 2700, 'trees': 0.0},
+    'Shoes': {'co2': 14.0, 'water': 4000, 'trees': 0.0},
+    'Fast Fashion': {'co2': 10.0, 'water': 3000, 'trees': 0.0},
+    'Coat': {'co2': 25.0, 'water': 1000, 'trees': 0.0},
+    
+    # Food (High Water & Land Use)
+    'Meat': {'co2': 20.0, 'water': 15000, 'trees': 0.05}, # Deforestation for feed
+    'Burger': {'co2': 4.0, 'water': 2400, 'trees': 0.01},
+    'Coffee': {'co2': 0.4, 'water': 140, 'trees': 0.0},
+    'Dairy Products': {'co2': 3.0, 'water': 1000, 'trees': 0.01},
+    
+    # Electronics (High CO2, High Water in Chip Mfg)
+    'Smartphone': {'co2': 60.0, 'water': 12000, 'trees': 0.0},
+    'Laptop': {'co2': 250.0, 'water': 19000, 'trees': 0.0},
+    
+    # Paper/Wood (High Trees)
+    'Books (New)': {'co2': 2.0, 'water': 50, 'trees': 0.005},
+    'Furniture': {'co2': 90.0, 'water': 0, 'trees': 0.5},
+    'Sofa': {'co2': 120.0, 'water': 0, 'trees': 1.0},
+    
+    # Eco (Low Impact)
+    'Second-Hand Item': {'co2': 1.0, 'water': 0, 'trees': 0},
+    'Local Groceries': {'co2': 0.5, 'water': 100, 'trees': 0},
 }
 
-# ==================== DATA MANAGEMENT ====================
-DATA_FILE = Path("shopimpact_data_v3.json")
+PRODUCT_TYPES = list(IMPACT_DATA.keys()) + [
+    'Electronics', 'Home Decor', 'Cosmetics', 'Sports Gear', 'Car Parts', 'Other'
+]
 
-def get_default_data() -> Dict:
+ALL_BRANDS = ['Zara', 'H&M', 'Nike', 'Apple', 'Samsung', 'IKEA', 'Local', 'Generic', 'Other']
+
+def get_impact(product_type: str, price: float) -> Dict:
+    """Calculate impact based on product type and price scaling"""
+    base = IMPACT_DATA.get(product_type, {'co2': price * 0.05, 'water': price * 1.5, 'trees': 0})
+    
+    # Scale slightly with price (expensive items usually bigger/more resources)
+    # But cap the scaling to avoid unrealistic numbers for luxury items
+    scale = max(0.5, min(price / 1000, 3.0)) 
+    
     return {
-        'purchases': [],
-        'user_profile': {
-            'name': 'Friend',
-            'monthlyBudget': 15000,
-            'co2Goal': 50,
-            'badges': []
-        }
+        'co2': base['co2'] * scale,
+        'water': base['water'] * scale,
+        'trees': base['trees'] * scale
     }
 
-@st.cache_data
-def load_data_cached() -> Dict:
+BADGES = {
+    'first_step': {'name': '🌱 First Step', 'desc': 'Logged your first purchase', 'icon': '🌱'},
+    'water_saver': {'name': '💧 Water Saver', 'desc': 'Chose low water impact item', 'icon': '💧'},
+    'forest_guard': {'name': '🌲 Forest Guard', 'desc': 'Saved a tree (Recycled/Used)', 'icon': '🌲'},
+    'big_spender': {'name': '💎 Big Spender', 'desc': 'Logged item > ₹10k', 'icon': '💎'},
+    'thrift_king': {'name': '👑 Thrift King', 'desc': '3 Second-hand items', 'icon': '👑'}
+}
+
+# ==================== DATA & STATE ====================
+DATA_FILE = Path("shopimpact_data_v4.json")
+
+def load_data():
     if DATA_FILE.exists():
         try:
             with open(DATA_FILE, 'r') as f:
                 return json.load(f)
-        except Exception:
-            return get_default_data()
-    return get_default_data()
+        except: pass
+    return {'purchases': [], 'user_profile': {'name': 'Friend', 'badges': []}}
 
-def save_data(data: Dict) -> None:
-    try:
-        with open(DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        load_data_cached.clear()
-    except Exception as e:
-        st.error(f"Error saving data: {e}")
+def save_data(data):
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f)
 
-# ==================== INITIALIZATION ====================
 if 'initialized' not in st.session_state:
-    data = load_data_cached()
-    st.session_state.purchases = data.get('purchases', [])
-    st.session_state.user_profile = data.get('user_profile', get_default_data()['user_profile'])
-    if 'badges' not in st.session_state.user_profile:
-        st.session_state.user_profile['badges'] = []
+    st.session_state.data = load_data()
     st.session_state.initialized = True
 
-# ==================== LOGIC FUNCTIONS ====================
-def check_badges():
-    purchases = st.session_state.purchases
-    my_badges = st.session_state.user_profile['badges']
-    new_badge = None
-
-    if len(purchases) >= 1 and 'first_step' not in my_badges:
-        new_badge = 'first_step'
-    
-    thrift_count = sum(1 for p in purchases if p['type'] in ECO_FRIENDLY_CATEGORIES)
-    if thrift_count >= 3 and 'thrift_king' not in my_badges:
-        new_badge = 'thrift_king'
-        
-    if purchases and purchases[-1]['co2_impact'] < 1.0 and 'low_carbon' not in my_badges:
-        new_badge = 'low_carbon'
-        
-    if purchases and purchases[-1]['price'] > 10000 and 'big_saver' not in my_badges:
-        new_badge = 'big_saver'
-
-    if len(purchases) >= 5 and 'consistent' not in my_badges:
-        new_badge = 'consistent'
-
-    if new_badge:
-        st.session_state.user_profile['badges'].append(new_badge)
-        badge_info = BADGES[new_badge]
-        st.toast(f"🏆 BADGE UNLOCKED: {badge_info['name']}", icon=badge_info['icon'])
-        time.sleep(0.5)
-        st.balloons()
-        save_data({
-            'purchases': st.session_state.purchases,
-            'user_profile': st.session_state.user_profile
-        })
-
-def add_purchase(product_type: str, brand: str, price: float):
-    co2_impact = price * get_product_multiplier(product_type) / 100
-    if product_type in ECO_FRIENDLY_CATEGORIES:
-        co2_impact *= 0.5
-    
-    purchase = {
+# ==================== APP LOGIC ====================
+def add_purchase(ptype, brand, price):
+    impact = get_impact(ptype, price)
+    entry = {
         'date': datetime.now().strftime('%Y-%m-%d %H:%M'),
-        'type': product_type,
+        'type': ptype,
         'brand': brand,
-        'price': float(price),
-        'co2_impact': float(co2_impact)
+        'price': price,
+        'co2': impact['co2'],
+        'water': impact['water'],
+        'trees': impact['trees']
     }
-    st.session_state.purchases.append(purchase)
+    st.session_state.data['purchases'].append(entry)
     
-    save_data({
-        'purchases': st.session_state.purchases,
-        'user_profile': st.session_state.user_profile
-    })
-    check_badges()
+    # Badge Logic
+    badges = st.session_state.data['user_profile']['badges']
+    new_badge = None
+    
+    if len(st.session_state.data['purchases']) == 1 and 'first_step' not in badges:
+        new_badge = 'first_step'
+    if impact['water'] < 100 and 'water_saver' not in badges:
+        new_badge = 'water_saver'
+    if price > 10000 and 'big_spender' not in badges:
+        new_badge = 'big_spender'
+        
+    if new_badge:
+        badges.append(new_badge)
+        st.toast(f"🏆 {BADGES[new_badge]['name']} Unlocked!", icon=BADGES[new_badge]['icon'])
+        st.balloons()
+        
+    save_data(st.session_state.data)
 
 # ==================== MAIN UI ====================
-
-# HEADER
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    st.markdown("# 🍃 ShopImpact")
-    st.markdown("### *Your Conscious Shopping Companion*")
-with col_h2:
-    if st.session_state.user_profile['badges']:
-        latest = st.session_state.user_profile['badges'][-1]
-        st.info(f"Latest Badge: {BADGES[latest]['icon']} {BADGES[latest]['name']}")
-    else:
-        st.info("Start shopping to earn badges!")
+col1, col2 = st.columns([3,1])
+with col1:
+    st.title("🍃 ShopImpact")
+    st.caption("Track CO₂, Water Wasted, and Trees Cut from your shopping.")
+with col2:
+    if st.session_state.data['user_profile']['badges']:
+        last = st.session_state.data['user_profile']['badges'][-1]
+        st.info(f"🏆 Latest: {BADGES[last]['name']}")
 
 st.markdown("---")
 
-# TABS
-tab_dash, tab_analytics, tab_profile = st.tabs(["🛍️ Dashboard", "📊 Analytics", "🏆 Profile & Badges"])
+tabs = st.tabs(["🛍️ Dashboard", "🌊 Impact Analytics", "👤 Profile"])
 
-# --- DASHBOARD TAB ---
-with tab_dash:
-    col_input, col_stats = st.columns([1, 1.5], gap="large")
+# --- DASHBOARD ---
+with tabs[0]:
+    c_form, c_stats = st.columns([1, 1.5], gap="medium")
     
-    with col_input:
-        st.markdown("#### 📝 New Purchase")
+    with c_form:
+        st.markdown("### 📝 New Purchase")
         with st.container():
             st.markdown('<div class="stCard">', unsafe_allow_html=True)
-            # Ensure unique key for form
-            with st.form("add_item_form_v2", clear_on_submit=True):
-                product_type = st.selectbox("📦 What did you buy?", PRODUCT_TYPES)
+            with st.form("entry_form", clear_on_submit=True):
+                # FIX: Explicit help text to ensure contrast if needed
+                product = st.selectbox("📦 Product Type", PRODUCT_TYPES)
                 brand = st.selectbox("🏷️ Brand", ALL_BRANDS)
+                price = st.slider("💰 Price (₹)", 0, 50000, 1000)
                 
-                # CHANGED: Slider instead of number input
-                price = st.slider("💰 Price (₹)", min_value=0, max_value=50000, value=500, step=100)
-                
-                submitted = st.form_submit_button("Add to Tracker", type="primary", use_container_width=True)
-                
-                if submitted:
-                    if price > 0:
-                        add_purchase(product_type, brand, price)
-                        st.success(f"Added {product_type}!")
-                    else:
-                        st.warning("Please set a price greater than 0.")
+                if st.form_submit_button("Add Purchase"):
+                    add_purchase(product, brand, price)
+                    st.success("Added!")
+                    st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown("#### 💡 Quick Eco-Tip")
-            tips = [
-                "Buying used saves ~80% CO₂ vs new!",
-                "Local produce = 5x less transport emissions.",
-                "Repair > Replace.",
-                "Combine deliveries to save fuel."
-            ]
-            st.info(random.choice(tips))
-
-    with col_stats:
-        st.markdown("#### 🚀 Live Impact Overview")
-        
-        if st.session_state.purchases:
-            df = pd.DataFrame(st.session_state.purchases)
-            total_spend = df['price'].sum()
-            total_co2 = df['co2_impact'].sum()
             
+            # Quick Insight
+            if product == 'Jeans':
+                st.warning("👖 Did you know? 1 pair of jeans uses ~7,500 liters of water!")
+            if product == 'Burger':
+                st.warning("🍔 Beef production is a leading cause of deforestation.")
+
+    with c_stats:
+        st.markdown("### 🚀 Reality Check")
+        df = pd.DataFrame(st.session_state.data['purchases'])
+        
+        if not df.empty:
+            total_water = df['water'].sum()
+            total_trees = df['trees'].sum()
+            
+            # Row 1: The Big 3 Metrics
             m1, m2, m3 = st.columns(3)
             with m1:
-                st.metric("Total Spent", f"₹{total_spend:,.0f}", delta=f"{len(df)} items")
+                st.metric("💨 CO₂ Emitted", f"{df['co2'].sum():.1f} kg")
             with m2:
-                st.metric("Total CO₂", f"{total_co2:.1f} kg", delta_color="inverse", delta="Low is good!")
+                # Convert water to "Bathtubs" (approx 150L per bath) for interest
+                bathtubs = total_water / 150
+                st.metric("💧 Water Wasted", f"{total_water:,.0f} L", f"~{bathtubs:.0f} Bathtubs")
             with m3:
-                eco_items = df[df['type'].isin(ECO_FRIENDLY_CATEGORIES)].shape[0]
-                rate = (eco_items/len(df)*100) if len(df) > 0 else 0
-                st.metric("Eco Choices", f"{eco_items}", f"{rate:.0f}% Rate")
+                st.metric("🌲 Trees Cost", f"{total_trees:.2f}", "Trees cut")
+            
+            # Row 2: Visual Impact
+            st.markdown("#### 🌍 Your Footprint Visualized")
+            
+            # Water Visual
+            water_fill = min(total_water / 50000 * 100, 100)
+            st.markdown(f"**Water Usage (Goal: < 50k L)**")
+            st.progress(water_fill / 100)
+            
+            # Tree Visual
+            if total_trees > 0:
+                trees_emoji = "🌲 " * int(total_trees) + "🌱"
+                st.markdown(f"**Forest Impact:** {trees_emoji}")
+            else:
+                st.markdown("**Forest Impact:** 🍃 Safe! No trees cut yet.")
 
-            st.markdown("#### 🕰️ Recent Activity")
-            recent = df.tail(5).iloc[::-1]
-            for _, row in recent.iterrows():
-                icon = "🍃" if row['type'] in ECO_FRIENDLY_CATEGORIES else "🛍️"
-                color = "#2e7d32" if row['type'] in ECO_FRIENDLY_CATEGORIES else "#4a5568"
-                st.markdown(
-                    f"""
-                    <div style="padding: 10px; background: rgba(255,255,255,0.7); border-radius: 10px; margin-bottom: 8px; border-left: 4px solid {color}; color: black;">
-                        <span style="font-size: 1.2rem;">{icon}</span> 
-                        <strong>{row['type']}</strong> ({row['brand']}) 
-                        <span style="float: right; color: #000; font-weight: bold;">₹{row['price']:,.0f} | {row['co2_impact']:.1f}kg CO₂</span>
-                    </div>
-                    """, 
-                    unsafe_allow_html=True
-                )
         else:
-            st.markdown(
-                """
-                <div style="text-align: center; padding: 40px; color: #000;">
-                    <h3>👻 Nothing here yet!</h3>
-                    <p>Log your first purchase to see your impact statistics.</p>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
+            st.info("Log your first item to see how much water and trees you've impacted.")
 
-# --- ANALYTICS TAB ---
-with tab_analytics:
-    if st.session_state.purchases:
-        df = pd.DataFrame(st.session_state.purchases)
-        df['date_dt'] = pd.to_datetime(df['date'])
+# --- ANALYTICS ---
+with tabs[1]:
+    if not df.empty:
+        st.markdown("### 📊 Deep Dive")
         
-        row1_col1, row1_col2 = st.columns(2)
-        
-        with row1_col1:
-            st.markdown("### 📅 Spending vs CO₂ Over Time")
-            fig_line = px.line(df, x='date_dt', y=['price', 'co2_impact'], markers=True, 
-                               labels={'value': 'Amount', 'date_dt': 'Date'},
-                               color_discrete_map={'price': '#2ecc71', 'co2_impact': '#e74c3c'})
-            fig_line.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)', 
-                legend_title_text='',
-                font=dict(color='black')
-            )
-            st.plotly_chart(fig_line, use_container_width=True)
-
-        with row1_col2:
-            st.markdown("### 🍩 Category Impact Breakdown")
-            fig_pie = px.sunburst(df, path=['type', 'brand'], values='co2_impact', 
-                                  color='co2_impact', color_continuous_scale='RdYlGn_r')
-            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', font=dict(color='black'))
-            st.plotly_chart(fig_pie, use_container_width=True)
-            
-        st.markdown("### 📉 Efficiency Scatter Plot (Price vs Impact)")
-        st.caption("Identify items that were expensive but low impact (Green zone) vs cheap but high impact (Red zone)")
-        fig_scatter = px.scatter(df, x='price', y='co2_impact', color='type', size='co2_impact',
-                                 hover_data=['brand'], size_max=40)
-        fig_scatter.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', 
-            plot_bgcolor='rgba(255,255,255,0.4)',
-            xaxis_title="Price (₹)",
-            yaxis_title="CO₂ Impact (kg)",
-            font=dict(color='black')
+        # 1. Water Wasted Chart (Bar)
+        fig_water = px.bar(
+            df, x='type', y='water', 
+            title="💧 Water Guzzlers (Liters)",
+            color='water', color_continuous_scale='Blues'
         )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        # CRITICAL: Fix Chart Visibility
+        fig_water.update_layout(
+            font=dict(color='black', size=14),
+            paper_bgcolor='rgba(255,255,255,0.6)',
+            plot_bgcolor='rgba(255,255,255,0.6)',
+            xaxis=dict(gridcolor='#ddd', title_font=dict(color='black')),
+            yaxis=dict(gridcolor='#ddd', title_font=dict(color='black'))
+        )
+        st.plotly_chart(fig_water, use_container_width=True)
         
-    else:
-        st.info("Log some data to unlock analytics!")
-
-# --- PROFILE TAB ---
-with tab_profile:
-    p_col1, p_col2 = st.columns([1, 2])
-    
-    with p_col1:
-        st.markdown("### ⚙️ Settings")
-        with st.form("profile_update_v2"):
-            new_name = st.text_input("Display Name", st.session_state.user_profile['name'])
-            new_budget = st.number_input("Monthly Budget (₹)", value=st.session_state.user_profile['monthlyBudget'])
-            new_goal = st.number_input("CO₂ Limit Goal (kg)", value=st.session_state.user_profile['co2Goal'])
+        col_a, col_b = st.columns(2)
+        
+        # 2. CO2 Trend (Area)
+        with col_a:
+            fig_trend = px.area(
+                df, x='date', y='co2', 
+                title="☁️ Cumulative CO₂ Impact",
+                line_shape='spline'
+            )
+            fig_trend.update_traces(line_color='#e74c3c')
+            fig_trend.update_layout(
+                font=dict(color='black'),
+                paper_bgcolor='rgba(255,255,255,0.6)',
+                plot_bgcolor='rgba(255,255,255,0.6)',
+                xaxis=dict(showgrid=False),
+                yaxis=dict(gridcolor='#ddd')
+            )
+            st.plotly_chart(fig_trend, use_container_width=True)
             
-            if st.form_submit_button("Update Profile"):
-                st.session_state.user_profile.update({
-                    'name': new_name,
-                    'monthlyBudget': new_budget,
-                    'co2Goal': new_goal
-                })
-                save_data({'purchases': st.session_state.purchases, 'user_profile': st.session_state.user_profile})
-                st.success("Updated!")
-                st.rerun()
-                
-        if st.button("🗑️ Reset All Data", type="secondary"):
-            st.session_state.purchases = []
-            st.session_state.user_profile['badges'] = []
-            save_data(get_default_data())
-            st.rerun()
+        # 3. Efficiency Bubble Chart
+        with col_b:
+            fig_bubble = px.scatter(
+                df, x='price', y='co2', 
+                size='water', color='type',
+                title="📉 Efficiency (Size = Water Usage)",
+                hover_data=['brand']
+            )
+            fig_bubble.update_layout(
+                font=dict(color='black'),
+                paper_bgcolor='rgba(255,255,255,0.6)',
+                plot_bgcolor='rgba(255,255,255,0.6)',
+                xaxis=dict(gridcolor='#ddd', title="Price (₹)"),
+                yaxis=dict(gridcolor='#ddd', title="CO₂ (kg)")
+            )
+            st.plotly_chart(fig_bubble, use_container_width=True)
+            
+    else:
+        st.warning("No data yet! Go to Dashboard and add items.")
 
-    with p_col2:
-        st.markdown(f"### 🏆 {st.session_state.user_profile['name']}'s Trophy Cabinet")
-        
-        my_badges = st.session_state.user_profile['badges']
-        
-        cols = st.columns(4)
-        for idx, (badge_id, info) in enumerate(BADGES.items()):
-            col = cols[idx % 4]
-            with col:
-                is_unlocked = badge_id in my_badges
-                opacity = "1.0" if is_unlocked else "0.3"
-                filter_css = "grayscale(0%)" if is_unlocked else "grayscale(100%)"
-                border = "2px solid #FFD700" if is_unlocked else "2px dashed #000"
-                
-                st.markdown(
-                    f"""
-                    <div style="
-                        text-align: center; 
-                        padding: 15px; 
-                        border-radius: 15px; 
-                        border: {border};
-                        background: rgba(255,255,255,0.7);
-                        opacity: {opacity};
-                        filter: {filter_css};
-                        height: 150px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: center;
-                        transition: all 0.3s;
-                        color: black;
-                    ">
-                        <div style="font-size: 3rem; margin-bottom: 5px;">{info['icon']}</div>
-                        <div style="font-weight: bold; font-size: 0.9rem; color: black;">{info['name']}</div>
-                        <div style="font-size: 0.7rem; color: #333;">{info['desc']}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+# --- PROFILE ---
+with tabs[2]:
+    st.markdown("### 🏆 Hall of Shame & Fame")
+    
+    my_badges = st.session_state.data['user_profile']['badges']
+    
+    cols = st.columns(5)
+    for i, (bid, bdata) in enumerate(BADGES.items()):
+        with cols[i]:
+            unlocked = bid in my_badges
+            opacity = "1" if unlocked else "0.3"
+            border = "2px solid gold" if unlocked else "1px dashed gray"
+            
+            st.markdown(f"""
+            <div style="text-align:center; padding:10px; border:{border}; border-radius:10px; opacity:{opacity}; background:white; color:black;">
+                <h1 style="margin:0;">{bdata['icon']}</h1>
+                <p style="font-weight:bold; margin:0; font-size:0.8rem;">{bdata['name']}</p>
+                <p style="font-size:0.7rem; margin:0;">{bdata['desc']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+    if st.button("🗑️ Reset All Data"):
+        st.session_state.data = {'purchases': [], 'user_profile': {'name': 'Friend', 'badges': []}}
+        save_data(st.session_state.data)
+        st.rerun()
 
 # FOOTER
-st.markdown("<br><br><br>", unsafe_allow_html=True)
-st.markdown(
-    """
-    <div style="text-align: center; color: #000; font-size: 0.8rem; font-weight: bold;">
-        Made with 💚 | ShopImpact v2.1 | <a href="#" style="color: #2e7d32; text-decoration: none;">Privacy Policy</a>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: black; font-weight: bold;'>Made with 💧 & 🌲 | ShopImpact v3.0</div>", unsafe_allow_html=True)
